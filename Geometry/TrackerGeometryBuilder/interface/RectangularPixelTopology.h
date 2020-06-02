@@ -1,7 +1,7 @@
 #ifndef Geometry_TrackerGeometryBuilder_RectangularPixelTopology_H
 #define Geometry_TrackerGeometryBuilder_RectangularPixelTopology_H
 
-/**
+/** franzglessgen
    * Topology for rectangular pixel detector with BIG pixels.
    */
 // Modified for the large pixels. Should work for barrel and forward.

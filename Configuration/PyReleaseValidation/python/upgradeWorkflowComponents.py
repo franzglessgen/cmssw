@@ -47,12 +47,16 @@ upgradeKeys[2026] = [
     '2026D49PU',
     '2026D51',
     '2026D51PU',
-    '2026D52',
-    '2026D52PU',
     '2026D53',
     '2026D53PU',
     '2026D54',
     '2026D54PU',
+    '2026D55',
+    '2026D55PU',
+    '2026D56',
+    '2026D56PU',
+    '2026D57',
+    '2026D57PU',
 ]
 
 # pre-generation of WF numbers
@@ -62,7 +66,7 @@ numWFStart={
 }
 numWFSkip=200
 # temporary measure to keep other WF numbers the same
-numWFConflict = [[25000,26000],[50000,51000]]
+numWFConflict = [[24000,24400],[25000,26000],[50000,51000]]
 numWFAll={
     2017: [],
     2026: []
@@ -716,13 +720,6 @@ upgradeProperties[2026] = {
         'Era' : 'Phase2C9',
         'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
     },
-    '2026D52' : {
-        'Geom' : 'Extended2026D52',
-        'HLTmenu': '@fake2',
-        'GT' : 'auto:phase2_realistic_T15',
-        'Era' : 'Phase2C9',
-        'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
-    },
     '2026D53' : {
         'Geom' : 'Extended2026D53',
         'HLTmenu': '@fake2',
@@ -735,6 +732,28 @@ upgradeProperties[2026] = {
         'HLTmenu': '@fake2',
         'GT' : 'auto:phase2_realistic_T19',
         'ProcessModifier': 'phase2_PixelCPEGeneric',
+        'Era' : 'Phase2C9',
+        'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
+    },
+    '2026D55' : {
+        'Geom' : 'Extended2026D55',
+        'HLTmenu': '@fake2',
+        'GT' : 'auto:phase2_realistic_T19',
+        'ProcessModifier': 'phase2_PixelCPEGeneric',
+        'Era' : 'Phase2C9',
+        'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
+    },
+    '2026D56' : {
+        'Geom' : 'Extended2026D56',
+        'HLTmenu': '@fake2',
+        'GT' : 'auto:phase2_realistic_T15',
+        'Era' : 'Phase2C9',
+        'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
+    },
+    '2026D57' : {
+        'Geom' : 'Extended2026D57',
+        'HLTmenu': '@fake2',
+        'GT' : 'auto:phase2_realistic_T15',
         'Era' : 'Phase2C9',
         'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
     },

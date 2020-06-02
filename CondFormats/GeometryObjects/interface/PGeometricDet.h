@@ -26,6 +26,7 @@ public:
         _params10;
     double _radLength;
     double _xi;
+    bool _isBricked;
     double _pixROCRows;
     double _pixROCCols;
     double _pixROCx;

@@ -84,6 +84,7 @@ void TrackerDigiGeometryAnalyzer::analyze(const edm::Event& iEvent, const edm::E
   PRINT("TrackerDigiGeometryAnalyzer") << " I have " << pDD->detUnits().size() << " detectors" << '\n';
   PRINT("TrackerDigiGeometryAnalyzer") << " I have " << pDD->detTypes().size() << " types" << '\n';
 
+/*
   for (auto const& it : pDD->detUnits()) {
     if (dynamic_cast<const PixelGeomDetUnit*>((it)) != nullptr) {
       const BoundPlane& p = (dynamic_cast<const PixelGeomDetUnit*>((it)))->specificSurface();
@@ -99,11 +100,11 @@ void TrackerDigiGeometryAnalyzer::analyze(const edm::Event& iEvent, const edm::E
 
     //analyseTrapezoidal(*it);
   }
-
+*/
   for (auto const& it : pDD->detTypes()) {
     if (dynamic_cast<const PixelGeomDetType*>((it)) != nullptr) {
       const PixelTopology& p = (dynamic_cast<const PixelGeomDetType*>((it)))->specificTopology();
-      PRINT("TrackerDigiGeometryAnalyzer") << " PIXEL Det "  // << it->geographicalId()
+      PRINT("TrackerDigiGeometryAnalyzer") << " PIXEL Det "  //<< it->geographicalId()
                                            << " is Bricked = " << p.isBricked()
                                            << "    Rows    " << p.nrows() << "    Columns " << p.ncolumns() << '\n';
     } else {

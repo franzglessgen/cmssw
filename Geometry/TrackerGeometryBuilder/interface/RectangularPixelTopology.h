@@ -68,7 +68,7 @@ public:
 
     // Calculate the edge of the active sensor with respect to the center,
     // that is simply the half-size.
-    // Take into account large pixels
+    // Take into account large pixels, shouldnt be nrows/ncols interchanged here:
     m_xoffset = -(m_nrows + BIG_PIX_PER_ROC_X * m_nrows / ROWS_PER_ROC) / 2. * m_pitchx;
     m_yoffset = -(m_ncols + BIG_PIX_PER_ROC_Y * m_ncols / COLS_PER_ROC) / 2. * m_pitchy;
 

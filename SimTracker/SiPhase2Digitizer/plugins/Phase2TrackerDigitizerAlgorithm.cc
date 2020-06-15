@@ -398,6 +398,10 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
   uint32_t detID = pixdet->geographicalId().rawId();
   signal_map_type& theSignal = _signal[detID];
 
+
+
+
+
   LogDebug("Phase2TrackerDigitizerAlgorithm")
       << " enter induce_signal, " << topol->pitch().first << " " << topol->pitch().second;
 
@@ -416,6 +420,10 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
     LogDebug("Phase2TrackerDigitizerAlgorithm") << " cloud " << v.position().x() << " " << v.position().y() << " "
                                                 << v.sigma_x() << " " << v.sigma_y() << " " << v.amplitude();
+
+
+
+
 
     // Find the maximum cloud spread in 2D plane , assume 3*sigma
     float CloudRight = CloudCenterX + clusterWidth_ * SigmaX;
@@ -436,7 +444,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
     // Convert the 2D points to pixel indices
     MeasurementPoint mp = topol->measurementPosition(PointRightUp);
-    int IPixRightUpX = static_cast<int>(std::floor(mp.x()));  // cast reqd.
+    int IPixRightUpX = static_cast<int>(std::floor(mp.x()));  // cast reqd.  for bricked pixels need to be changed -> half integer indices
     int IPixRightUpY = static_cast<int>(std::floor(mp.y()));
     LogDebug("Phase2TrackerDigitizerAlgorithm")
         << " right-up " << PointRightUp << " " << mp.x() << " " << mp.y() << " " << IPixRightUpX << " " << IPixRightUpY;
@@ -451,7 +459,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     int numColumns = topol->ncolumns();  // det module number of cols&rows
     int numRows = topol->nrows();
 
-    IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;
+    IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;  // change required, for bricked pixels, rightupY can also be equal to numrows -0.5. But anyways its an exception scenario
     IPixRightUpY = numColumns > IPixRightUpY ? IPixRightUpY : numColumns - 1;
     IPixLeftDownX = 0 < IPixLeftDownX ? IPixLeftDownX : 0;
     IPixLeftDownY = 0 < IPixLeftDownY ? IPixLeftDownY : 0;
@@ -482,8 +490,8 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
       x.emplace(ix, TotalIntegrationRange);                   // save strip integral
     }
 
-    // Now integrate strips in y
-    hit_map_type y;
+    // Now integrate strips in y 
+    hit_map_type y;   //For bricked pixels, create a second hit map representing shifted columns and fill it in the same way.y_bricked[iy] 
     for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
       float yLB, LowerBound;
       if (iy == 0 || SigmaY == 0.) {
@@ -508,13 +516,14 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     }
 
     // Get the 2D charge integrals by folding x and y strips
+    //For bricked pixels, depending on the eveness of the column, replace y[iy] by y_bricked[iy] define previously
     for (int ix = IPixLeftDownX; ix <= IPixRightUpX; ++ix) {    // loop over x index
       for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
         float ChargeFraction = Charge * x[ix] * y[iy];
         int chanFired = -1;
         if (ChargeFraction > 0.) {
           chanFired =
-              pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
+              pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index   replace for bricked pixels: keep the same channel but be careful the indices will have to be modified.
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
         }

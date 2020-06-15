@@ -249,9 +249,23 @@ float RectangularPixelTopology::localX(const float mpx) const {
 // measuremet to local transformation for Y coordinate
 // Y is in the ROC column number direction
 float RectangularPixelTopology::localY(const float mpy) const {
+ 
+ /*Regular pixels 
   int binoffy = int(mpy);                  // truncate to int
   float fractionY = mpy - float(binoffy);  // find the fraction
   float local_pitchy = m_pitchy;           // defaultpitch
+*/
+
+
+ //Bricked pixels
+//Assuming the uneven columns start with a half pixel, which is associated with the index 0, and the following pixels have indices equal to the full number of pixels under them (in Y).
+
+  int binoffy = int(mpy);                  // truncate to int
+  float fractionY = mpy - float(binoffy);  // find the fraction
+  float local_pitchy = m_pitchy;           // defaultpitch
+
+
+//Bricked Big pixels are not implemented for now !
 
   if
     UNLIKELY(m_upgradeGeometry) {
@@ -264,12 +278,15 @@ float RectangularPixelTopology::localY(const float mpy) const {
       }
 #endif
     }
-  else {  // 415 is last big pixel, 416 and above do not exists!
+  else { 
+ // 415 is last big pixel, 416 and above do not exists!
     constexpr int bigYIndeces[]{0, 51, 52, 103, 104, 155, 156, 207, 208, 259, 260, 311, 312, 363, 364, 415, 416, 511};
     auto const j = std::lower_bound(std::begin(bigYIndeces), std::end(bigYIndeces), binoffy);
     if (*j == binoffy)
       local_pitchy *= 2;
-    binoffy += (j - bigYIndeces);
+    binoffy += (j - bigYIndeces); // add units of pitch according to the number of big pixels encountered
+
+
   }
 
   // The final position in local coordinates

@@ -68,7 +68,6 @@ public:
 
     // Calculate the edge of the active sensor with respect to the center,
     // that is simply the half-size.
-    // Take into account large pixels, shouldnt be nrows/ncols interchanged here:
     m_xoffset = -(m_nrows + BIG_PIX_PER_ROC_X * m_nrows / ROWS_PER_ROC) / 2. * m_pitchx;
     m_yoffset = -(m_ncols + BIG_PIX_PER_ROC_Y * m_ncols / COLS_PER_ROC) / 2. * m_pitchy;
 
@@ -148,7 +147,7 @@ public:
   // Check whether the pixel is at the edge of the module
   //
   bool isItEdgePixelInX(int ixbin) const override { return ((ixbin == 0) | (ixbin == (m_nrows - 1))); }
-  bool isItEdgePixelInY(int iybin) const override { return ((iybin == 0) | (iybin == (m_ncols - 1))); }
+  bool isItEdgePixelInY(int iybin) const override { return ((iybin == 0) | (iybin == (m_ncols - 1))); } // Needs to be modified if bricked pixels, dependending on the parity of the column, the edge pixels have different indices.
   bool isItEdgePixel(int ixbin, int iybin) const override {
     return (isItEdgePixelInX(ixbin) | isItEdgePixelInY(iybin));
   }

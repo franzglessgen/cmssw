@@ -58,6 +58,8 @@ std::pair<float, float> RectangularPixelTopology::pixel(const LocalPoint& p) con
   float mpY = 0.;
 
   if (m_upgradeGeometry) {
+
+    LogDebug("RectangularPixelTopology") << " m_upgradeGeometryTrue "<< '\n';
     iybin0 = (iybin % m_COLS_PER_ROC);  // 0-51
     numROC = iybin / m_COLS_PER_ROC;    // 0-7
     mpY = float(numROC * m_COLS_PER_ROC + iybin0) + fractionY;

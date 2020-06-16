@@ -444,14 +444,42 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
     // Convert the 2D points to pixel indices
     MeasurementPoint mp = topol->measurementPosition(PointRightUp);
+    
+
     int IPixRightUpX = static_cast<int>(std::floor(mp.x()));  // cast reqd.  for bricked pixels need to be changed -> half integer indices
-    int IPixRightUpY = static_cast<int>(std::floor(mp.y()));
+	
+    int IPixRightUpY;
+
+	// If the column is a "shifted" column, the indices have to counted differently.
+	if (topol->isBricked() && IPixRightUpX%2){
+	  		
+	IPixRightUpY = static_cast<int>(std::floor(mp.y() + 0.5));	}
+	else {
+	IPixRightUpY = static_cast<int>(std::floor(mp.y()));}
+
+
+
+
+
     LogDebug("Phase2TrackerDigitizerAlgorithm")
         << " right-up " << PointRightUp << " " << mp.x() << " " << mp.y() << " " << IPixRightUpX << " " << IPixRightUpY;
 
     mp = topol->measurementPosition(PointLeftDown);
     int IPixLeftDownX = static_cast<int>(std::floor(mp.x()));
-    int IPixLeftDownY = static_cast<int>(std::floor(mp.y()));
+
+
+
+    int IPixLeftDownY;
+
+	// If the column is a "shifted" column, the indices have to counted differently.
+	if (topol->isBricked() && IPixLeftDownX%2){
+	  		
+	IPixLeftDownY = static_cast<int>(std::floor(mp.y() + 0.5));	}
+	else {
+	IPixLeftDownY = static_cast<int>(std::floor(mp.y()));}
+
+
+
     LogDebug("Phase2TrackerDigitizerAlgorithm") << " left-down " << PointLeftDown << " " << mp.x() << " " << mp.y()
                                                 << " " << IPixLeftDownX << " " << IPixLeftDownY;
 
@@ -459,8 +487,17 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     int numColumns = topol->ncolumns();  // det module number of cols&rows
     int numRows = topol->nrows();
 
-    IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;  // change required, for bricked pixels, rightupY can also be equal to numrows -0.5. But anyways its an exception scenario
-    IPixRightUpY = numColumns > IPixRightUpY ? IPixRightUpY : numColumns - 1;
+    IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;  // change required, for bricked pixels, rightupY can also be equal to numrows.
+
+ 
+    if (topol->isBricked() && IPixRightUpX%2){
+	    
+   	IPixRightUpY =  numColumns +1  > IPixRightUpY    ? IPixRightUpY : numColumns ; }
+
+    else {  IPixRightUpY =  numColumns > IPixRightUpY    ? IPixRightUpY : numColumns - 1;}
+    
+
+    
     IPixLeftDownX = 0 < IPixLeftDownX ? IPixLeftDownX : 0;
     IPixLeftDownY = 0 < IPixLeftDownY ? IPixLeftDownY : 0;
 
@@ -491,7 +528,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     }
 
     // Now integrate strips in y 
-    hit_map_type y;   //For bricked pixels, create a second hit map representing shifted columns and fill it in the same way.y_bricked[iy] 
+    hit_map_type y; 
     for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
       float yLB, LowerBound;
       if (iy == 0 || SigmaY == 0.) {
@@ -515,20 +552,74 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
       y.emplace(iy, TotalIntegrationRange);  // save strip integral
     }
 
+
+   hit_map_type y_bricked; 
+
+
+   if (topol -> isBricked()){
+
+      //For bricked pixels, create a second hit map representing shifted columns and fill it in the same way.y_bricked[iy] 
+    for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
+      float yLB, LowerBound;
+      if (iy == 0 || SigmaY == 0.) {
+        LowerBound = 0.;
+      } else {
+        mp = MeasurementPoint(0.0, iy -0.5);
+        yLB = topol->localPosition(mp).y();
+        LowerBound = 1. - calcQ((yLB - CloudCenterY) / SigmaY);
+      }
+
+      float yUB, UpperBound;
+      if (iy == numColumns - 1 || SigmaY == 0.) {
+        UpperBound = 1.;
+      } else {
+        mp = MeasurementPoint(0.0, iy + 0.5);
+        yUB = topol->localPosition(mp).y();
+        UpperBound = 1. - calcQ((yUB - CloudCenterY) / SigmaY);
+      }
+
+      float TotalIntegrationRange = UpperBound - LowerBound;
+      y_bricked.emplace(iy, TotalIntegrationRange);  // save strip integral
+    }
+
+
+			 }
+
+
+
+
     // Get the 2D charge integrals by folding x and y strips
-    //For bricked pixels, depending on the eveness of the column, replace y[iy] by y_bricked[iy] define previously
+    //For bricked pixels, depending on the eveness of the column, replace y[iy] by y_bricked[iy] defined previously
     for (int ix = IPixLeftDownX; ix <= IPixRightUpX; ++ix) {    // loop over x index
       for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
-        float ChargeFraction = Charge * x[ix] * y[iy];
+   
+	float ChargeFraction;
+		
+     if (topol->isBricked() && ix%2) {   ChargeFraction = Charge * x[ix] * y_bricked[iy]  }
+     else { ChargeFraction = Charge * x[ix] * y[iy];}
+
         int chanFired = -1;
         if (ChargeFraction > 0.) {
           chanFired =
-              pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index   replace for bricked pixels: keep the same channel but be careful the indices will have to be modified.
+              pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index 
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
         }
 
-        mp = MeasurementPoint(ix, iy);
+
+
+
+	MeasurementPoint mp2 = topol->measurementPosition(ix, iy);
+	LocalPoint lp2 = topol->localPosition(mp2);
+	int chan2 = topol->channel(lp2); 
+
+
+	if (topol->isBricked() && ix%2){   mp = MeasurementPoint(ix, iy -0.5);     }
+        else  {         mp = MeasurementPoint(ix, iy);    }
+
+
+
+
         LocalPoint lp = topol->localPosition(mp);
         int chan = topol->channel(lp);
 
@@ -537,6 +628,10 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
             << " " << chanFired << " " << ChargeFraction << " " << mp.x() << " " << mp.y() << " " << lp.x() << " "
             << lp.y() << " "  // givex edge position
             << chan;          // edge belongs to previous ?
+
+        LogDebug("Phase2TrackerDigitizerAlgorithm")
+            << " bricked test " << topol -> isBricked()  << " " << chan <<" " << chan2 ; 
+
       }
     }
   }

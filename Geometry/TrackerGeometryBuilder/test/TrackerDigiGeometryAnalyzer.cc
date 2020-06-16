@@ -84,14 +84,43 @@ void TrackerDigiGeometryAnalyzer::analyze(const edm::Event& iEvent, const edm::E
   PRINT("TrackerDigiGeometryAnalyzer") << " I have " << pDD->detUnits().size() << " detectors" << '\n';
   PRINT("TrackerDigiGeometryAnalyzer") << " I have " << pDD->detTypes().size() << " types" << '\n';
 
-/*
+
   for (auto const& it : pDD->detUnits()) {
     if (dynamic_cast<const PixelGeomDetUnit*>((it)) != nullptr) {
       const BoundPlane& p = (dynamic_cast<const PixelGeomDetUnit*>((it)))->specificSurface();
-      PRINT("TrackerDigiGeometryAnalyzer") << it->geographicalId() << " RadLeng Pixel " << p.mediumProperties().radLen()
-                                           << ' ' << " Xi Pixel " << p.mediumProperties().xi() << '\n';
-    }
+	const PixelTopology& topol = (dynamic_cast<const PixelGeomDetUnit*>((it)))->specificTopology();
+	uint32_t detID = it->geographicalId().rawId();	
+	uint32_t Subid = DetId(detID).subdetId();
+	LocalPoint MidPoint = LocalPoint(0, 0);
+	LocalPoint BottomLeft = LocalPoint(- topol.pitch().first*topol.nrows()/2, - topol.pitch().second*topol.ncolumns()/2 );
+	 
+	LocalPoint BottomLeft_top_u = LocalPoint(- topol.pitch().first*(topol.nrows()/2 + 0.2)  , - topol.pitch().second*(topol.ncolumns()/2 -1)  );
+	LocalPoint BottomLeft_right_u = LocalPoint(- topol.pitch().first*(topol.nrows()/2-1), - topol.pitch().second*(topol.ncolumns()/2 +0.2   )   );
 
+	LocalPoint BottomLeft_top_o = LocalPoint(- topol.pitch().first*(topol.nrows()/2 -0.2)  , - topol.pitch().second*(topol.ncolumns()/2 -1)  );
+	LocalPoint BottomLeft_right_o = LocalPoint(- topol.pitch().first*(topol.nrows()/2-1), - topol.pitch().second*(topol.ncolumns()/2 -0.2  )  );
+      PRINT("TrackerDigiGeometryAnalyzer") << " Bricked " << topol.isBricked() 
+					  
+					   << " Pitch " << topol.pitch().first << " " << topol.pitch().second
+					   << " PIXEL Det "  << Subid//it->geographicalId()
+
+					   << " Mid Pixel " << topol.pixel(MidPoint).first << " " << topol.pixel(MidPoint).second
+
+	
+					   << " Bottom Pixel " << topol.pixel(BottomLeft).first << " " << topol.pixel(BottomLeft).second 
+
+					   << " Top u" << topol.pixel(BottomLeft_top_u).first << " " << topol.pixel(BottomLeft_top_u).second  << " Channel " << topol.channel(BottomLeft_top_u)  
+					   << " Right u " << topol.pixel(BottomLeft_right_u).first << " " << topol.pixel(BottomLeft_right_u).second << " Channel " << topol.channel(BottomLeft_right_u) 
+
+					   << " Top o" << topol.pixel(BottomLeft_top_o).first << " " << topol.pixel(BottomLeft_top_o).second << " Channel " << topol.channel(BottomLeft_top_o) 
+					   << " Right o " << topol.pixel(BottomLeft_right_o).first << " " << topol.pixel(BottomLeft_right_o).second << " Channel " << topol.channel(BottomLeft_right_o) << '\n';
+
+
+
+				/*	   << it->geographicalId() << " RadLeng Pixel " << p.mediumProperties().radLen()
+                                           << ' ' << " Xi Pixel " << p.mediumProperties().xi() << '\n';*/
+    }
+/*
     if (dynamic_cast<const StripGeomDetUnit*>((it)) != nullptr) {
       const BoundPlane& s = (dynamic_cast<const StripGeomDetUnit*>((it)))->specificSurface();
       PRINT("TrackerDigiGeometryAnalyzer") << it->geographicalId() << " RadLeng Strip " << s.mediumProperties().radLen()
@@ -99,12 +128,14 @@ void TrackerDigiGeometryAnalyzer::analyze(const edm::Event& iEvent, const edm::E
     }
 
     //analyseTrapezoidal(*it);
-  }
-*/
+ */ }
+
   for (auto const& it : pDD->detTypes()) {
+   
     if (dynamic_cast<const PixelGeomDetType*>((it)) != nullptr) {
       const PixelTopology& p = (dynamic_cast<const PixelGeomDetType*>((it)))->specificTopology();
-      PRINT("TrackerDigiGeometryAnalyzer") << " PIXEL Det "  //<< it->geographicalId()
+      //const PixelTopology* p = &(dynamic_cast<const PixelGeomDetType*>((it)))->specificTopology();
+      PRINT("TrackerDigiGeometryAnalyzer") 
                                            << " is Bricked = " << p.isBricked()
                                            << "    Rows    " << p.nrows() << "    Columns " << p.ncolumns() << '\n';
     } else {

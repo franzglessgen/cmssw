@@ -175,6 +175,8 @@ public:
   int colsperroc() const override { return m_COLS_PER_ROC; }
   float xoffset() const { return m_xoffset; }
   float yoffset() const { return m_yoffset; }
+  // is bricked
+  bool isBricked() const override { return false; }
 
 private:
   float m_pitchx;

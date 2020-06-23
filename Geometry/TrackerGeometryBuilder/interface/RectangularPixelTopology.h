@@ -44,6 +44,7 @@ public:
                            float pitchx,
                            float pitchy,
                            bool upgradeGeometry,
+			   bool isBricked,
                            int ROWS_PER_ROC,       // Num of Rows per ROC
                            int COLS_PER_ROC,       // Num of Cols per ROC
                            int BIG_PIX_PER_ROC_X,  // in x direction, rows. BIG_PIX_PER_ROC_X = 0 for SLHC
@@ -58,7 +59,13 @@ public:
         m_COLS_PER_ROC(COLS_PER_ROC),  // Num of Cols per ROC
         m_ROCS_X(ROCS_X),              // 2 for SLHC
         m_ROCS_Y(ROCS_Y),              // 8 for SLHC
-        m_upgradeGeometry(upgradeGeometry) {
+        m_upgradeGeometry(upgradeGeometry),
+        m_isBricked(isBricked) {
+
+	  std::cout << "m_isBricked = " << m_isBricked << std::endl;
+	  std::cout << "nrows = " << nrows << std::endl;
+
+
     // Calculate the edge of the active sensor with respect to the center,
     // that is simply the half-size.
     // Take into account large pixels
@@ -163,6 +170,8 @@ public:
   int colsperroc() const override { return m_COLS_PER_ROC; }
   float xoffset() const { return m_xoffset; }
   float yoffset() const { return m_yoffset; }
+  // is bricked
+  bool isBricked() const { return m_isBricked; }
 
 private:
   float m_pitchx;
@@ -176,6 +185,7 @@ private:
   int m_ROCS_X;
   int m_ROCS_Y;
   bool m_upgradeGeometry;
+  bool m_isBricked;
 };
 
 #endif

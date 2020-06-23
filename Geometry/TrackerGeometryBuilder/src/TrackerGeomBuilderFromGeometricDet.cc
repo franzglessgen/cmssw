@@ -166,6 +166,7 @@ void TrackerGeomBuilderFromGeometricDet::buildPixel(
 
       PixelTopology* t = PixelTopologyBuilder().build(&*bounds,
                                                       upgradeGeometry,
+						      i->isBricked(),
                                                       i->pixROCRows(),
                                                       i->pixROCCols(),
                                                       BIG_PIX_PER_ROC_X,

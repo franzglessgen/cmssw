@@ -173,6 +173,7 @@ public:
   /**
    * The following four pix* methods only return meaningful results for pixels.
    */
+  bool isBricked() const { return _isBricked; }
   double pixROCRows() const { return _pixROCRows; }
   double pixROCCols() const { return _pixROCCols; }
   double pixROCx() const { return _pixROCx; }
@@ -199,6 +200,7 @@ private:
   DetId _geographicalID;
   double _radLength;
   double _xi;
+  bool _isBricked = false;
   double _pixROCRows;
   double _pixROCCols;
   double _pixROCx;

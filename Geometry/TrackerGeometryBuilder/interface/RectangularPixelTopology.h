@@ -106,6 +106,11 @@ public:
   //
   int channel(const LocalPoint& lp) const override {
     std::pair<float, float> p = pixel(lp);
+	//Special treatment for bricked pixels:
+
+    if (m_isBricked and int(p.first)%2)   p.second = p.second + 0.5;
+
+
     return PixelChannelIdentifier::pixelToChannel(int(p.first), int(p.second));
   }
 

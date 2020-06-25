@@ -397,8 +397,10 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
   const Phase2TrackerTopology* topol = &pixdet->specificTopology();
   uint32_t detID = pixdet->geographicalId().rawId();
   signal_map_type& theSignal = _signal[detID];
+  const GlobalPoint& pos_glob = pixdet->position();
+  
 
-  //LogDebug("Phase2TrackerDigitizerAlgorithm")
+//LogDebug("Phase2TrackerDigitizerAlgorithm")
     //  << " enter induce_signal, " << topol->pitch().first << " " << topol->pitch().second;
 
 
@@ -550,13 +552,10 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
         yLB_bricked = topol->localPosition(mp_bricked).y();
         LowerBound_bricked = 1. - calcQ((yLB_bricked - CloudCenterY) / SigmaY);}	
 
-	
-
-
 	}
 
       float yUB, yUB_bricked, UpperBound, UpperBound_bricked;
-      if (iy == numColumns - 1 || SigmaY == 0.) {
+      if (iy >= numColumns - 1 || SigmaY == 0.) {
         UpperBound = 1.;
       } else {
         
@@ -580,6 +579,8 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 	}
 
       float TotalIntegrationRange = UpperBound - LowerBound;
+      float TotalIntegrationRange_bricked = UpperBound_bricked - LowerBound_bricked;
+      
       y.emplace(iy, TotalIntegrationRange);  // save strip integral
       if (topol->isBricked() && iy == IPixLeftDownY && IPixLeftDownX%2)  y.emplace(iy-1, TotalIntegrationRange_bricked);
 
@@ -621,7 +622,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 	}
 
       float yUB, yUB_bricked, UpperBound, UpperBound_bricked;
-      if (iy == numColumns  || SigmaY == 0.) { // This was changed for bricked pixels
+      if (iy >= numColumns  || SigmaY == 0.) { // This was changed for bricked pixels
         UpperBound = 1.;
       } else {
 
@@ -629,7 +630,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
 	mp = MeasurementPoint(0.0, iy +0.5);
         yUB = topol->localPosition(mp).y();
-        UpperBound = 1. - calcQ((yLB - CloudCenterY) / SigmaY);
+        UpperBound = 1. - calcQ((yUB - CloudCenterY) / SigmaY);
 
 
 	if (iy == IPixRightUpY && !IPixRightUpX%2) {
@@ -662,8 +663,16 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     // Get the 2D charge integrals by folding x and y strips
     for (int ix = IPixLeftDownX; ix <= IPixRightUpX; ++ix) {    // loop over x index
       for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
-        float ChargeFraction = Charge * x[ix] * y[iy];
-        int chanFired = -1;
+        
+
+	float ChargeFraction;
+        
+
+        if (topol->isBricked() && ix%2) {   ChargeFraction = Charge * x[ix] * y_bricked[iy];  }
+        else { ChargeFraction = Charge * x[ix] * y[iy];}
+
+
+	int chanFired = -1;
         if (ChargeFraction > 0.) {
           chanFired =
               pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
@@ -671,15 +680,36 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
           hit_signal[chanFired] += ChargeFraction;
         }
 
-        mp = MeasurementPoint(ix, iy);
+
+
+
+
+	MeasurementPoint mp2 = MeasurementPoint(ix + 1, iy +0.2);
+	LocalPoint lp2 = topol->localPosition(mp2);
+	int chan2 = topol->channel(lp2);
+	int chanf2 = pixelFlag_ ? PixelDigi::pixelToChannel(ix +1, iy +1) : Phase2TrackerDigi::pixelToChannel(ix+1, iy+1);  // Get index 
+
+	MeasurementPoint mp3 = MeasurementPoint(ix + 1, iy - 0.2);
+	LocalPoint lp3 = topol->localPosition(mp3);
+	int chan3 = topol->channel(lp3); 
+	int chanf3 = pixelFlag_ ? PixelDigi::pixelToChannel(ix +1, iy -1) : Phase2TrackerDigi::pixelToChannel(ix+1, iy-1);  // Get index 
+
+
+        mp = MeasurementPoint(ix, iy);   
+
         LocalPoint lp = topol->localPosition(mp);
         int chan = topol->channel(lp);
 
-        LogDebug("Phase2TrackerDigitizerAlgorithm")
-            << " pixel " << ix << " " << iy << " - "
+  std::cout<<  "Phase2TrackerDigitizerAlgorithm"   << " pixel " << ix << " " << iy << " - "
             << " " << chanFired << " " << ChargeFraction << " " << mp.x() << " " << mp.y() << " " << lp.x() << " "
             << lp.y() << " "  // givex edge position
-            << chan;          // edge belongs to previous ?
+            << chan <<std::endl;          // edge belongs to previous ?
+
+   std::cout<<  "Phase2TrackerDigitizerAlgorithm"       << " bricked test " << topol -> isBricked()  << " " << chan <<" " << chan2 <<" "<< chan3 << " " <<  chanf2 <<" "<< chanf3 <<std::endl; 
+
+
+
+
       }
     }
   }

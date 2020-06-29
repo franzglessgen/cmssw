@@ -155,7 +155,12 @@ void PixelThresholdClusterizer::clusterizeDetUnitT(const T& input,
     // so we don't want to call "make_cluster" for these cases
     if (theBuffer(theSeeds[i]) >= theSeedThreshold) {  // Is this seed still valid?
       //  Make a cluster around this seed
-      SiPixelCluster&& cluster = make_cluster(theSeeds[i], output);
+     
+      SiPixelCluster cluster;
+      if (!&pixDet->specificTopology()->isBricked()) cluster = make_cluster(theSeeds[i], output);
+      else cluster = make_cluster_bricked(theSeeds[i], output);
+
+
 
       //  Check if the cluster is above threshold
       // (TO DO: one is signed, other unsigned, gcc warns...)
@@ -387,7 +392,7 @@ int PixelThresholdClusterizer::calibrate(int adc, int col, int row) {
 //----------------------------------------------------------------------------
 //!  \brief The actual clustering algorithm: group the neighboring pixels around the seed.
 //----------------------------------------------------------------------------
-SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::PixelPos& pix,
+SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelCluster::PixelPos& pix,
                                                        edmNew::DetSetVector<SiPixelCluster>::FastFiller& output) {
   //First we acquire the seeds for the clusters
   int seed_adc;
@@ -398,18 +403,7 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::Pix
   //to mark that we have already considered it.
   //The only difference between dead/noisy pixels and standard ones is that for dead/noisy pixels,
   //We consider the charge of the pixel to always be zero.
-
-  /*  this is not possible as dead and noisy pixel cannot make it into a seed...
-  if ( doMissCalibrate &&
-       (theSiPixelGainCalibrationService_->isDead(theDetid,pix.col(),pix.row()) || 
-	theSiPixelGainCalibrationService_->isNoisy(theDetid,pix.col(),pix.row())) )
-    {
-      std::cout << "IMPOSSIBLE" << std::endl;
-      seed_adc = 0;
-      theBuffer.set_adc(pix, 1);
-    }
-    else {
-  */
+  
   seed_adc = theBuffer(pix.row(), pix.col());
   theBuffer.set_adc(pix, 1);
   //  }
@@ -457,6 +451,123 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::Pix
             goto endClus;
           theBuffer.set_adc(newpix, 1);
 	  std::cout<<"col "<<c<<" row "<<std::endl;	 
+        }
+
+      }
+    }
+
+  }  // while accretion
+endClus:
+  SiPixelCluster cluster(acluster.isize, acluster.adc, acluster.x, acluster.y, acluster.xmin, acluster.ymin);
+  //Here we split the cluster, if the flag to do so is set and we have found a dead or noisy pixel.
+
+  if (dead_flag && doSplitClusters) {
+    // Set separate cluster threshold for L1 (needed for phase1)
+    auto clusterThreshold = theClusterThreshold;
+    if (theLayer == 1)
+      clusterThreshold = theClusterThreshold_L1;
+
+    //Set the first cluster equal to the existing cluster.
+    SiPixelCluster first_cluster = cluster;
+    bool have_second_cluster = false;
+    while (!dead_pixel_stack.empty()) {
+      //consider each found dead pixel
+      SiPixelCluster::PixelPos deadpix = dead_pixel_stack.top();
+      dead_pixel_stack.pop();
+      theBuffer.set_adc(deadpix, 1);
+
+      //Clusterize the split cluster using the dead pixel as a seed
+      SiPixelCluster second_cluster = make_cluster(deadpix, output);
+
+      //If both clusters would normally have been found by the clusterizer, put them into output
+      if (second_cluster.charge() >= clusterThreshold && first_cluster.charge() >= clusterThreshold) {
+        output.push_back(second_cluster);
+        have_second_cluster = true;
+      }
+
+      //We also want to keep the merged cluster in data and let the RecHit algorithm decide which set to keep
+      //This loop adds the second cluster to the first.
+      const std::vector<SiPixelCluster::Pixel>& branch_pixels = second_cluster.pixels();
+      for (unsigned int i = 0; i < branch_pixels.size(); i++) {
+        int temp_x = branch_pixels[i].x;
+        int temp_y = branch_pixels[i].y;
+        int temp_adc = branch_pixels[i].adc;
+        SiPixelCluster::PixelPos newpix(temp_x, temp_y);
+        cluster.add(newpix, temp_adc);
+      }
+    }
+
+    //Remember to also add the first cluster if we added the second one.
+    if (first_cluster.charge() >= clusterThreshold && have_second_cluster) {
+      output.push_back(first_cluster);
+      std::push_heap(output.begin(), output.end(), [](SiPixelCluster const& cl1, SiPixelCluster const& cl2) {
+        return cl1.minPixelRow() < cl2.minPixelRow();
+      });
+    }
+  }
+
+  return cluster;
+}
+
+
+
+
+SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::PixelPos& pix,
+                                                       edmNew::DetSetVector<SiPixelCluster>::FastFiller& output) {
+  //First we acquire the seeds for the clusters
+  int seed_adc;
+  stack<SiPixelCluster::PixelPos, vector<SiPixelCluster::PixelPos> > dead_pixel_stack;
+
+  //The individual modules have been loaded into a buffer.
+  //After each pixel has been considered by the clusterizer, we set the adc count to 1
+  //to mark that we have already considered it.
+  //The only difference between dead/noisy pixels and standard ones is that for dead/noisy pixels,
+  //We consider the charge of the pixel to always be zero.
+
+  /*  this is not possible as dead and noisy pixel cannot make it into a seed...
+  if ( doMissCalibrate &&
+       (theSiPixelGainCalibrationService_->isDead(theDetid,pix.col(),pix.row()) || 
+	theSiPixelGainCalibrationService_->isNoisy(theDetid,pix.col(),pix.row())) )
+    {
+      std::cout << "IMPOSSIBLE" << std::endl;
+      seed_adc = 0;
+      theBuffer.set_adc(pix, 1);
+    }
+    else {
+  */
+  seed_adc = theBuffer(pix.row(), pix.col());
+  theBuffer.set_adc(pix, 1);
+  //  }
+
+  AccretionCluster acluster;
+  acluster.add(pix, seed_adc);
+
+  //Here we search all pixels adjacent to all pixels in the cluster.
+  bool dead_flag = false;
+  while (!acluster.empty()) {
+    //This is the standard algorithm to find and add a pixel
+    auto curInd = acluster.top();
+    acluster.pop();
+    
+
+
+	for (auto c = std::max(0, int(acluster.y[curInd]) - 1);
+         c < std::min(int(acluster.y[curInd]) + 2, theBuffer.columns());
+         ++c){ 
+
+
+	 for (auto r = std::max(0, int(acluster.x[curInd]) - 1);
+           r < std::min(int(acluster.x[curInd]) + 2, theBuffer.rows());
+           ++r) {
+
+	
+
+     
+        if (theBuffer(r, c) >= thePixelThreshold) {
+          SiPixelCluster::PixelPos newpix(r, c);
+          if (!acluster.add(newpix, theBuffer(r, c)))
+            goto endClus;
+          theBuffer.set_adc(newpix, 1);
         }
 
         /* //Commenting out the addition of dead pixels to the cluster until further testing -- dfehling 06/09

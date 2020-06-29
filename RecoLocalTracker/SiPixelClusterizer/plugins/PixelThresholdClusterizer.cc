@@ -423,17 +423,40 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::Pix
     //This is the standard algorithm to find and add a pixel
     auto curInd = acluster.top();
     acluster.pop();
-    for (auto c = std::max(0, int(acluster.y[curInd]) - 1);
-         c < std::min(int(acluster.y[curInd]) + 2, theBuffer.columns());
-         ++c) {
-      for (auto r = std::max(0, int(acluster.x[curInd]) - 1);
+    
+
+
+	 for (auto r = std::max(0, int(acluster.x[curInd]) - 1);
            r < std::min(int(acluster.x[curInd]) + 2, theBuffer.rows());
            ++r) {
+
+
+	int LowerAccLimity = 0;
+	int UpperAccLimity = 0;
+
+	if (r%2 == int(acluster.x[curInd])%2) {  LowerAccLimity =std::max(0, int(acluster.y[curInd]) - 1); UpperAccLimity = std::min(int(acluster.y[curInd]) + 2,theBuffer.columns());   } 
+ 
+
+	else {
+	     int parity_hit = int(acluster.x[curInd])%2;
+	     int parity_curr = r%2;  
+
+	     LowerAccLimity =std::max(0, int(acluster.y[curInd]) - parity_hit); 
+	     UpperAccLimity = std::min(int(acluster.y[curInd]) + parity_curr + 1,theBuffer.columns());   	} 
+
+	//for (auto c = std::max(0, int(acluster.y[curInd]) - 1);
+        // c < std::min(int(acluster.y[curInd]) + 2, theBuffer.columns());
+        // ++c) 
+	
+
+	for (auto c = LowerAccLimity; c < UpperAccLimity; ++c) {
+     
         if (theBuffer(r, c) >= thePixelThreshold) {
           SiPixelCluster::PixelPos newpix(r, c);
           if (!acluster.add(newpix, theBuffer(r, c)))
             goto endClus;
           theBuffer.set_adc(newpix, 1);
+	  std::cout<<"col "<<c<<" row "<<std::endl;	 
         }
 
         /* //Commenting out the addition of dead pixels to the cluster until further testing -- dfehling 06/09

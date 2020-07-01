@@ -157,7 +157,7 @@ void PixelThresholdClusterizer::clusterizeDetUnitT(const T& input,
       //  Make a cluster around this seed
      
       SiPixelCluster cluster;
-      if (!&pixDet->specificTopology()->isBricked()) cluster = make_cluster(theSeeds[i], output);
+      if (!(&pixDet->specificTopology())->isBricked()) cluster = make_cluster(theSeeds[i], output);
       else cluster = make_cluster_bricked(theSeeds[i], output);
 
 
@@ -450,7 +450,7 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
           if (!acluster.add(newpix, theBuffer(r, c)))
             goto endClus;
           theBuffer.set_adc(newpix, 1);
-	  std::cout<<"col "<<c<<" row "<<std::endl;	 
+	  //std::cout<<"col "<<c<<" row "<<r<<std::endl;	 
         }
 
       }

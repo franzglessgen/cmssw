@@ -397,9 +397,12 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
   const Phase2TrackerTopology* topol = &pixdet->specificTopology();
   uint32_t detID = pixdet->geographicalId().rawId();
   signal_map_type& theSignal = _signal[detID];
+  const GlobalPoint& pos_glob = pixdet->position();
 
-  LogDebug("Phase2TrackerDigitizerAlgorithm")
-      << " enter induce_signal, " << topol->pitch().first << " " << topol->pitch().second;
+
+   std::cout<<  "Phase2TrackerDigitizerAlgorithm"    << " enter induce_signal, " <<detID<<" "<< topol->pitch().first << " " << topol->pitch().second <<" "<< pos_glob << " "<< topol->nrows() << " "<< topol->ncolumns()<< " "<< topol->rocsY() << " "<< topol->rocsX() << " " << topol->rowsperroc() << " "<< topol->colsperroc()<<  std::endl;
+
+
 
   // local map to store pixels hit by 1 Hit.
   using hit_map_type = std::map<int, float, std::less<int> >;
@@ -414,8 +417,8 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     float SigmaY = v.sigma_y();             //               in y
     float Charge = v.amplitude();           // Charge amplitude
 
-    LogDebug("Phase2TrackerDigitizerAlgorithm") << " cloud " << v.position().x() << " " << v.position().y() << " "
-                                                << v.sigma_x() << " " << v.sigma_y() << " " << v.amplitude();
+    std::cout << " cloud " << v.position().x() << " " << v.position().y() << " "
+                                                << v.sigma_x() << " " << v.sigma_y() << " " << v.amplitude()<<std::endl;
 
     // Find the maximum cloud spread in 2D plane , assume 3*sigma
     float CloudRight = CloudCenterX + clusterWidth_ * SigmaX;
@@ -438,14 +441,12 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     MeasurementPoint mp = topol->measurementPosition(PointRightUp);
     int IPixRightUpX = static_cast<int>(std::floor(mp.x()));  // cast reqd.
     int IPixRightUpY = static_cast<int>(std::floor(mp.y()));
-    LogDebug("Phase2TrackerDigitizerAlgorithm")
-        << " right-up " << PointRightUp << " " << mp.x() << " " << mp.y() << " " << IPixRightUpX << " " << IPixRightUpY;
+        std::cout << " right-up " << PointRightUp << " " << mp.x() << " " << mp.y() << " " << IPixRightUpX << " " << IPixRightUpY << std::endl;
 
     mp = topol->measurementPosition(PointLeftDown);
     int IPixLeftDownX = static_cast<int>(std::floor(mp.x()));
     int IPixLeftDownY = static_cast<int>(std::floor(mp.y()));
-    LogDebug("Phase2TrackerDigitizerAlgorithm") << " left-down " << PointLeftDown << " " << mp.x() << " " << mp.y()
-                                                << " " << IPixLeftDownX << " " << IPixLeftDownY;
+    std::cout << " left-down " << PointLeftDown << " " << mp.x() << " " << mp.y() << " " << IPixLeftDownX << " " << IPixLeftDownY<<std::endl;
 
     // Check detector limits to correct for pixels outside range.
     int numColumns = topol->ncolumns();  // det module number of cols&rows
@@ -517,17 +518,13 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
               pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
+	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;         
         }
 
         mp = MeasurementPoint(ix, iy);
         LocalPoint lp = topol->localPosition(mp);
         int chan = topol->channel(lp);
 
-        LogDebug("Phase2TrackerDigitizerAlgorithm")
-            << " pixel " << ix << " " << iy << " - "
-            << " " << chanFired << " " << ChargeFraction << " " << mp.x() << " " << mp.y() << " " << lp.x() << " "
-            << lp.y() << " "  // givex edge position
-            << chan;          // edge belongs to previous ?
       }
     }
   }

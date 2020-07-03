@@ -519,6 +519,14 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     IPixLeftDownX = 0 < IPixLeftDownX ? IPixLeftDownX : 0;
     IPixLeftDownY = 0 < IPixLeftDownY ? IPixLeftDownY : 0;
 
+
+
+
+
+
+
+
+
     // First integrate charge strips in x
     hit_map_type x;
     for (int ix = IPixLeftDownX; ix <= IPixRightUpX; ++ix) {  // loop over x index
@@ -622,14 +630,14 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
         LowerBound = 1. - calcQ((yLB - CloudCenterY) / SigmaY);
 
 
-	if (iy == IPixLeftDownY && !IPixLeftDownX%2) {
+	if (iy == IPixLeftDownY && !(IPixLeftDownX%2)) {
 	mp = MeasurementPoint(0.0, iy);
         yLB = topol->localPosition(mp).y();
         LowerBound = 1. - calcQ((yLB - CloudCenterY) / SigmaY);}
 
 
 
-	if (iy == IPixRightUpY && !IPixRightUpX%2) {
+	if (iy == IPixRightUpY && !(IPixRightUpX%2)) {
 	mp_bricked = MeasurementPoint(0.0, iy +0.5);
         yLB_bricked = topol->localPosition(mp_bricked).y();
         LowerBound_bricked = 1. - calcQ((yLB_bricked - CloudCenterY) / SigmaY);}
@@ -649,7 +657,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
         UpperBound = 1. - calcQ((yUB - CloudCenterY) / SigmaY);
 
 
-	if (iy == IPixRightUpY && !IPixRightUpX%2) {
+	if (iy == IPixRightUpY && !(IPixRightUpX%2)) {
 	mp_bricked = MeasurementPoint(0.0, iy+1);
         yUB_bricked = topol->localPosition(mp_bricked).y();
         UpperBound_bricked = 1. - calcQ((yUB_bricked - CloudCenterY) / SigmaY);}
@@ -662,12 +670,43 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
       y_bricked.emplace(iy, TotalIntegrationRange);  // save strip integral
     
 
-     if (iy == IPixRightUpY and !IPixRightUpX%2)  	{
+     if (iy == IPixRightUpY and !(IPixRightUpX%2))  	{
 	float TotalIntegrationRange_bricked = UpperBound_bricked - LowerBound_bricked;
 	y_bricked.emplace(iy+1, TotalIntegrationRange_bricked);  // save strip integral
 							}
 	}//loop over y index
 
+
+
+
+      if (IPixLeftDownY > IPixRightUpY  ){  //special case -> To be included into general case
+      float yLB, yLB_bricked,LowerBound, LowerBound_bricked;
+      int iy = IPixLeftDownY;
+
+
+	mp = MeasurementPoint(0.0, iy -0.5);
+        yLB = topol->localPosition(mp).y();
+        LowerBound = 1. - calcQ((yLB - CloudCenterY) / SigmaY);
+
+	
+
+      float yUB, yUB_bricked, UpperBound, UpperBound_bricked;
+
+
+
+	mp = MeasurementPoint(0.0, iy);
+        yUB = topol->localPosition(mp).y();
+        UpperBound = 1. - calcQ((yUB - CloudCenterY) / SigmaY);
+
+      
+
+      float TotalIntegrationRange = UpperBound - LowerBound;
+      y_bricked.emplace(iy, TotalIntegrationRange);  // save strip integral
+      y.emplace(iy-1, TotalIntegrationRange);  // save strip integral
+    
+
+	}//loop over y index
+	
 
 	} // if topol->isBricked()
 
@@ -706,7 +745,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
 
  
-     if (iy == IPixRightUpY && !IPixRightUpX%2 && topol->isBricked() && ix%2  ) {
+     if (iy == IPixRightUpY && !(IPixRightUpX%2) && topol->isBricked() && ix%2  ) {
 
 	ChargeFraction = Charge * x[ix] * y_bricked[iy+1];
 
@@ -727,7 +766,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
 
 	
-      if (topol->isBricked() && iy == IPixLeftDownY && IPixLeftDownX%2  && !ix%2  ) { 
+      if (topol->isBricked() && iy == IPixLeftDownY && IPixLeftDownX%2  && !(ix%2)  ) { 
 
 
 	ChargeFraction = Charge * x[ix] * y[iy-1];
@@ -759,7 +798,49 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
 
       }
-    }
+
+
+	
+
+      if (IPixLeftDownY > IPixRightUpY  ){  //special case -> To be included into general case
+	
+		
+	int iy = IPixLeftDownY;	
+	float ChargeFraction = Charge * x[ix] * y_bricked[iy];
+
+
+
+
+	int chanFired = -1;
+        if (ChargeFraction > 0.) {
+          chanFired =
+              pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
+          // Load the amplitude
+          hit_signal[chanFired] += ChargeFraction;
+	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;         
+        }
+
+
+
+	ChargeFraction = Charge * x[ix+1] * y[iy-1];
+
+
+	chanFired = -1;
+        if (ChargeFraction > 0.) {
+          chanFired =
+              pixelFlag_ ? PixelDigi::pixelToChannel(ix+1, iy-1) : Phase2TrackerDigi::pixelToChannel(ix+1, iy-1);  // Get index
+          // Load the amplitude
+          hit_signal[chanFired] += ChargeFraction;
+	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy-1 <<" "<< ChargeFraction << std::endl;         
+        }
+
+	ix++;
+
+					}
+    
+
+
+	}
   }
 
 

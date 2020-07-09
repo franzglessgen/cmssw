@@ -448,6 +448,9 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     //int IPixRightUpY = static_cast<int>(std::floor(mp.y()));
    
 
+    int numColumns = topol->ncolumns();  // det module number of cols&rows
+    int numRows = topol->nrows();
+    IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;
 
 	//Compact formula for the commented section right above
     int IPixRightUpY = static_cast<int>(std::floor(mp.y() + 0.5*topol->isBricked()*(IPixRightUpX%2) ));
@@ -466,6 +469,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     //int IPixLeftDownY = static_cast<int>(std::floor(mp.y()));
 
 
+    IPixLeftDownX = 0 < IPixLeftDownX ? IPixLeftDownX : 0;
 
 
     int IPixLeftDownY = static_cast<int>(std::floor(mp.y() + 0.5*topol->isBricked()*(IPixLeftDownX%2) ));	
@@ -476,10 +480,10 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     std::cout << " left-down " << PointLeftDown << " " << mp.x() << " " << mp.y()  << " " << IPixLeftDownX << " " << IPixLeftDownY<<std::endl;
 
     // Check detector limits to correct for pixels outside range.
-    int numColumns = topol->ncolumns();  // det module number of cols&rows
-    int numRows = topol->nrows();
+    //int numColumns = topol->ncolumns();  // det module number of cols&rows
+    //int numRows = topol->nrows();
 
-    IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;
+    //IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;
     //IPixRightUpY = numColumns > IPixRightUpY ? IPixRightUpY : numColumns - 1;
     
 
@@ -493,9 +497,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 	
     
 
-    IPixLeftDownX = 0 < IPixLeftDownX ? IPixLeftDownX : 0;
     IPixLeftDownY = 0 < IPixLeftDownY ? IPixLeftDownY : 0;
-
 
 
 
@@ -546,7 +548,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 						}
 		else {
 		
-		if (  (IPixRightUpX%2  && IPixLeftDownY==IPixRightUpY)	|| IPixLeftDownX%2 ) IPixLeftDownY -=1; //Edges ??
+		if (  (IPixRightUpX%2  && IPixLeftDownY==IPixRightUpY)	|| IPixLeftDownX%2 ) IPixLeftDownY =  std::max(IPixLeftDownY- 1, 0); //Edges ??
 
 			}
 				}
@@ -582,7 +584,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 	}
 
       float TotalIntegrationRange = UpperBound - LowerBound;
-      
+	
       y.emplace(iy, TotalIntegrationRange);  // save strip integral
 
     }
@@ -608,7 +610,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 			}
 
 
-      //For bricked pixels, create a second hit map representing shifted columns and fill it in the same way.y_bricked[iy] 
+      //For bricked pixels, create a second hit map representing shifted columns and fill it in the same way : y_bricked[iy] 
     for (int iy = IPixLeftDownY_bricked; iy <= IPixRightUpY_bricked; ++iy) {  // loop over y index
       float yLB, yLB_bricked,LowerBound;
       if (iy == 0 || SigmaY == 0.) {
@@ -697,7 +699,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
 
 
-      for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
+      for (int iy = IPixLeftDownY; iy <= std::min(IPixRightUpY, numColumns-1); ++iy) {  // loop over y index
 
         
 

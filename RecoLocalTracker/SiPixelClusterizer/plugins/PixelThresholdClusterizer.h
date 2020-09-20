@@ -128,7 +128,7 @@ private:
                               edmNew::DetSetVector<SiPixelCluster>::FastFiller& output);
   // Calibrate the ADC charge to electrons
   SiPixelCluster make_cluster_bricked(const SiPixelCluster::PixelPos& pix,
-                              edmNew::DetSetVector<SiPixelCluster>::FastFiller& output);
+                              edmNew::DetSetVector<SiPixelCluster>::FastFiller& output, bool isbarrel);
   int calibrate(int adc, int col, int row);
 };
 

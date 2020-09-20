@@ -111,7 +111,7 @@ public:
     //if (m_isBricked and int(p.first)%2)   p.second = p.second + 0.5;
     //This statement is made more compact in the second argument of the following:
 
-    return PixelChannelIdentifier::pixelToChannel(int(p.first), int(p.second + 0.5*m_isBricked*(int(p.first)%2)  ));
+    return PixelChannelIdentifier::pixelToChannel(int(p.first), int(p.second - 0.5*m_isBricked*(int(p.first)%2)  ));
   }
 
   //-------------------------------------------------------------

@@ -68,17 +68,17 @@ PixelThresholdClusterizer::~PixelThresholdClusterizer() {}
 
 // Configuration descriptions
 void PixelThresholdClusterizer::fillPSetDescription(edm::ParameterSetDescription& desc) {
-  desc.add<int>("ChannelThreshold", 1000);
+  desc.add<int>("ChannelThreshold");//,860); //1000);
   desc.add<bool>("MissCalibrate", true);
   desc.add<bool>("SplitClusters", false);
   desc.add<int>("VCaltoElectronGain", 65);
   desc.add<int>("VCaltoElectronGain_L1", 65);
   desc.add<int>("VCaltoElectronOffset", -414);
   desc.add<int>("VCaltoElectronOffset_L1", -414);
-  desc.add<int>("SeedThreshold", 1000);
-  desc.add<int>("ClusterThreshold_L1", 4000);
-  desc.add<int>("ClusterThreshold", 4000);
-  desc.add<double>("ElectronPerADCGain", 135.);
+  desc.add<int>("SeedThreshold");//, 860);//1000);
+  desc.add<int>("ClusterThreshold_L1");//, 1600);
+  desc.add<int>("ClusterThreshold");//, 1600);
+  desc.add<double>("ElectronPerADCGain");//, 135);//135.);
   desc.add<bool>("Phase2Calibration", false);
   desc.add<int>("Phase2ReadoutMode", -1);
   desc.add<double>("Phase2DigiBaseline", 1200.);
@@ -131,12 +131,16 @@ void PixelThresholdClusterizer::clusterizeDetUnitT(const T& input,
   // Do not bother for empty detectors
   //if (begin == end) cout << " PixelThresholdClusterizer::clusterizeDetUnit - No digis to clusterize";
 
+   //std::cout << typeid(begin).name() <<std::endl;
+
+
   //  Set up the clusterization on this DetId.
   if (!setup(pixDet))
     return;
 
   theDetid = input.detId();
 
+  bool isBarrel = (DetId(theDetid).subdetId() == PixelSubdetector::PixelBarrel);
   // Set separate cluster threshold for L1 (needed for phase1)
   auto clusterThreshold = theClusterThreshold;
   theLayer = (DetId(theDetid).subdetId() == 1) ? tTopo->pxbLayer(theDetid) : 0;
@@ -155,15 +159,17 @@ void PixelThresholdClusterizer::clusterizeDetUnitT(const T& input,
     // so we don't want to call "make_cluster" for these cases
     if (theBuffer(theSeeds[i]) >= theSeedThreshold) {  // Is this seed still valid?
       //  Make a cluster around this seed
-     
+    
+
+ 
       SiPixelCluster cluster;
       if (!(&pixDet->specificTopology())->isBricked()) cluster = make_cluster(theSeeds[i], output);
-      else cluster = make_cluster_bricked(theSeeds[i], output);
+      else cluster = make_cluster_bricked(theSeeds[i], output, isBarrel);
 
 
 
       //  Check if the cluster is above threshold
-      // (TO DO: one is signed, other unsigned, gcc warns...)
+      // (TO DO: onehttps://www.quora.com/How-do-I-print-type-of-variable-in-c is signed, other unsigned, gcc warns...)
       if (cluster.charge() >= clusterThreshold) {
         // std::cout << "putting in this cluster " << i << " " << cluster.charge() << " " << cluster.pixelADC().size() << endl;
         // sort by row (x)
@@ -393,7 +399,7 @@ int PixelThresholdClusterizer::calibrate(int adc, int col, int row) {
 //!  \brief The actual clustering algorithm: group the neighboring pixels around the seed.
 //----------------------------------------------------------------------------
 SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelCluster::PixelPos& pix,
-                                                       edmNew::DetSetVector<SiPixelCluster>::FastFiller& output) {
+                                                       edmNew::DetSetVector<SiPixelCluster>::FastFiller& output, bool isbarrel) {
   //First we acquire the seeds for the clusters
   int seed_adc;
   stack<SiPixelCluster::PixelPos, vector<SiPixelCluster::PixelPos> > dead_pixel_stack;
@@ -405,8 +411,12 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
   //We consider the charge of the pixel to always be zero.
   
   seed_adc = theBuffer(pix.row(), pix.col());
+
+if (isbarrel) {
+  std::cout<<"seed "<<pix.row()<<" "<<pix.col()<<" "<<seed_adc<<" "<<theSeedThreshold<<" "<<thePixelThreshold<<endl;
+}
+
   theBuffer.set_adc(pix, 1);
-  //  }
 
   AccretionCluster acluster;
   acluster.add(pix, seed_adc);
@@ -432,8 +442,8 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
  
 
 	else {
-	     int parity_hit = int(acluster.x[curInd])%2;
-	     int parity_curr = r%2;  
+	     int parity_curr = int(acluster.x[curInd])%2;
+	     int parity_hit = r%2;  
 
 	     LowerAccLimity =std::max(0, int(acluster.y[curInd]) - parity_hit); 
 	     UpperAccLimity = std::min(int(acluster.y[curInd]) + parity_curr + 1,theBuffer.columns());   	} 
@@ -449,6 +459,7 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
           SiPixelCluster::PixelPos newpix(r, c);
           if (!acluster.add(newpix, theBuffer(r, c)))
             goto endClus;
+	  if (isbarrel) {std::cout<<"add "<<r<<" "<<c<<" "<<theBuffer(r,c)<<endl;}
           theBuffer.set_adc(newpix, 1);
 	  //std::cout<<"col "<<c<<" row "<<r<<std::endl;	 
         }
@@ -477,7 +488,7 @@ endClus:
       theBuffer.set_adc(deadpix, 1);
 
       //Clusterize the split cluster using the dead pixel as a seed
-      SiPixelCluster second_cluster = make_cluster(deadpix, output);
+      SiPixelCluster second_cluster = make_cluster_bricked(deadpix, output, isbarrel);
 
       //If both clusters would normally have been found by the clusterizer, put them into output
       if (second_cluster.charge() >= clusterThreshold && first_cluster.charge() >= clusterThreshold) {
@@ -538,6 +549,10 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::Pix
   seed_adc = theBuffer(pix.row(), pix.col());
   theBuffer.set_adc(pix, 1);
   //  }
+  
+
+
+
 
   AccretionCluster acluster;
   acluster.add(pix, seed_adc);

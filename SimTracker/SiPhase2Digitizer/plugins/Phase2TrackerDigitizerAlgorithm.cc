@@ -404,9 +404,11 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     //  << " enter induce_signal, " << topol->pitch().first << " " << topol->pitch().second;
 
 
+  bool IsBarrel = (DetId(detID).subdetId() == PixelSubdetector::PixelBarrel);
 
-   std::cout<<  "Phase2TrackerDigitizerAlgorithm"    << " enter induce_signal, " <<detID<<" "<< topol->pitch().first << " " << topol->pitch().second <<" "<< pos_glob << " "<< topol->nrows() << " "<< topol->ncolumns()<< " "<< topol->rocsY() << " "<< topol->rocsX() << " " << topol->rowsperroc() << " "<< topol->colsperroc()<<  std::endl;
-
+if (IsBarrel){
+   std::cout<<  "Phase2TrackerDigitizerAlgorithm"    << " enter induce_signal, " <<detID<<" "<< topol->pitch().first << " " << topol->pitch().second <<" "<< pos_glob << " "<< topol->nrows() << " "<< topol->ncolumns()<< " "<< topol->rocsY() << " "<< topol->rocsX() << " " << topol->rowsperroc() << " "<< topol->colsperroc()<<std::endl;
+		}
 
 
   // local map to store pixels hit by 1 Hit.
@@ -422,8 +424,9 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     float SigmaY = v.sigma_y();             //               in y
     float Charge = v.amplitude();           // Charge amplitude
 
+if (IsBarrel){
    std::cout<< " cloud " << v.position().x() << " " << v.position().y() << " " << v.sigma_x() << " " << v.sigma_y() << " " << v.amplitude() <<std::endl;
-
+}
     // Find the maximum cloud spread in 2D plane , assume 3*sigma
     float CloudRight = CloudCenterX + clusterWidth_ * SigmaX;
     float CloudLeft = CloudCenterX - clusterWidth_ * SigmaX;
@@ -453,17 +456,18 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     IPixRightUpX = numRows > IPixRightUpX ? IPixRightUpX : numRows - 1;
 
 	//Compact formula for the commented section right above
-    int IPixRightUpY = static_cast<int>(std::floor(mp.y() + 0.5*topol->isBricked()*(IPixRightUpX%2) ));
+    int IPixRightUpY = static_cast<int>(mp.y() - 0.5*topol->isBricked()*(IPixRightUpX%2) );
 
 
 
 
 
 
+if (IsBarrel){
 
 	// std::cout <<"Phase2TrackerDigitizerAlgorithm"
         std::cout << " right-up " << PointRightUp << " " << mp.x() << " " << mp.y() << " " << IPixRightUpX << " " << IPixRightUpY<<std::endl;
-
+		}
     mp = topol->measurementPosition(PointLeftDown);
     int IPixLeftDownX = static_cast<int>(std::floor(mp.x()));
     //int IPixLeftDownY = static_cast<int>(std::floor(mp.y()));
@@ -472,13 +476,14 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     IPixLeftDownX = 0 < IPixLeftDownX ? IPixLeftDownX : 0;
 
 
-    int IPixLeftDownY = static_cast<int>(std::floor(mp.y() + 0.5*topol->isBricked()*(IPixLeftDownX%2) ));	
+    int IPixLeftDownY = static_cast<int>(mp.y() - 0.5*topol->isBricked()*(IPixLeftDownX%2));//changed in case negative value	
 
 
 
+if (IsBarrel){
     //std::cout << "Phase2TrackerDigitizerAlgorithm" 
     std::cout << " left-down " << PointLeftDown << " " << mp.x() << " " << mp.y()  << " " << IPixLeftDownX << " " << IPixLeftDownY<<std::endl;
-
+	}
     // Check detector limits to correct for pixels outside range.
     //int numColumns = topol->ncolumns();  // det module number of cols&rows
     //int numRows = topol->nrows();
@@ -487,16 +492,9 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     //IPixRightUpY = numColumns > IPixRightUpY ? IPixRightUpY : numColumns - 1;
     
 
-	// Has to be changed in the following way if the numbering of pixels is consistent.
-    
-    if (topol->isBricked() && IPixRightUpX%2){
-	    //This should be numColumns + 1 
-   	IPixRightUpY =  numColumns +1   > IPixRightUpY    ? IPixRightUpY : numColumns ; }
-
-    else {  IPixRightUpY =  numColumns > IPixRightUpY    ? IPixRightUpY : numColumns - 1;}
-	
     
 
+    IPixRightUpY =  numColumns > IPixRightUpY    ? IPixRightUpY : numColumns - 1;
     IPixLeftDownY = 0 < IPixLeftDownY ? IPixLeftDownY : 0;
 
 
@@ -541,24 +539,17 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 	int IPixRightUpY_bricked = IPixRightUpY;
 
 
-	if (topol->isBricked()){
-		if (IPixLeftDownY > IPixRightUpY){
+	if (topol->isBricked()) IPixRightUpY = std::min( IPixRightUpY + int((IPixRightUpX%2)), numColumns-1);
 
-			std::swap(IPixLeftDownY,IPixRightUpY);
-						}
-		else {
-		
-		if (  (IPixRightUpX%2  && IPixLeftDownY==IPixRightUpY)	|| IPixLeftDownX%2 ) IPixLeftDownY =  std::max(IPixLeftDownY- 1, 0); //Edges ??
 
-			}
-				}
+				
 
 
 
 
      hit_map_type y;
     for (int iy = IPixLeftDownY; iy <= IPixRightUpY; ++iy) {  // loop over y index
-      float yLB, yLB_bricked, LowerBound;
+      float yLB, LowerBound;
       if (iy == 0 || SigmaY == 0.) {
         LowerBound = 0.;
       } else {
@@ -569,7 +560,7 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
 	}
 
-      float yUB, yUB_bricked, UpperBound;
+      float yUB, UpperBound;
       if (iy >= numColumns - 1 || SigmaY == 0.) {
         UpperBound = 1.;
       } else {
@@ -595,30 +586,18 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
    hit_map_type y_bricked; 
 
 
-   if (topol -> isBricked()){
-
-
-
-		if (IPixLeftDownY_bricked > IPixRightUpY_bricked){
-
-			std::swap(IPixLeftDownY_bricked,IPixRightUpY_bricked);
-						}
-		else {
-		
-		if (  ( !(IPixLeftDownX%2)  && IPixLeftDownY_bricked==IPixRightUpY_bricked)	|| !(IPixRightUpX%2) ) IPixRightUpY_bricked +=1; //Edges ??
-
-			}
+   if (topol->isBricked()) { IPixLeftDownY_bricked = std::max( IPixLeftDownY_bricked - int((!(IPixLeftDownX%2))), 0);
 
 
       //For bricked pixels, create a second hit map representing shifted columns and fill it in the same way : y_bricked[iy] 
     for (int iy = IPixLeftDownY_bricked; iy <= IPixRightUpY_bricked; ++iy) {  // loop over y index
-      float yLB, yLB_bricked,LowerBound;
+      float yLB, LowerBound;
       if (iy == 0 || SigmaY == 0.) {
         LowerBound = 0.;
       } else {
 
 
-	mp = MeasurementPoint(0.0, iy -0.5);
+	mp = MeasurementPoint(0.0, iy + 0.5);
         yLB = topol->localPosition(mp).y();
         LowerBound = 1. - calcQ((yLB - CloudCenterY) / SigmaY);
 
@@ -626,14 +605,14 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
 
 	}
 
-      float yUB, yUB_bricked, UpperBound;
+      float yUB, UpperBound;
       if (iy >= numColumns  || SigmaY == 0.) { // This was changed for bricked pixels
         UpperBound = 1.;
       } else {
 
 
 
-	mp = MeasurementPoint(0.0, iy +0.5);
+	mp = MeasurementPoint(0.0, iy + 1.5 );
         yUB = topol->localPosition(mp).y();
         UpperBound = 1. - calcQ((yUB - CloudCenterY) / SigmaY);
 
@@ -689,7 +668,8 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
               pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
-	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;         
+if (IsBarrel){
+	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;        } 
         }
 
 			}  }
@@ -714,7 +694,8 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
               pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
-	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;         
+if (IsBarrel){
+	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;        } 
         }
 
 			}  }

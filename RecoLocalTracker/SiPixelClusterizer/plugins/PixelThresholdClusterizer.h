@@ -125,7 +125,7 @@ private:
   void clear_buffer(DigiIterator begin, DigiIterator end);
   void clear_buffer(ClusterIterator begin, ClusterIterator end);
   SiPixelCluster make_cluster(const SiPixelCluster::PixelPos& pix,
-                              edmNew::DetSetVector<SiPixelCluster>::FastFiller& output);
+                              edmNew::DetSetVector<SiPixelCluster>::FastFiller& output, bool IsBarrel);
   // Calibrate the ADC charge to electrons
   int calibrate(int adc, int col, int row);
 };

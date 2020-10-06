@@ -68,17 +68,17 @@ PixelThresholdClusterizer::~PixelThresholdClusterizer() {}
 
 // Configuration descriptions
 void PixelThresholdClusterizer::fillPSetDescription(edm::ParameterSetDescription& desc) {
-  desc.add<int>("ChannelThreshold", 1000);
+  desc.add<int>("ChannelThreshold");//, 1000);
   desc.add<bool>("MissCalibrate", true);
   desc.add<bool>("SplitClusters", false);
   desc.add<int>("VCaltoElectronGain", 65);
   desc.add<int>("VCaltoElectronGain_L1", 65);
   desc.add<int>("VCaltoElectronOffset", -414);
   desc.add<int>("VCaltoElectronOffset_L1", -414);
-  desc.add<int>("SeedThreshold", 1000);
-  desc.add<int>("ClusterThreshold_L1", 4000);
-  desc.add<int>("ClusterThreshold", 4000);
-  desc.add<double>("ElectronPerADCGain", 135.);
+  desc.add<int>("SeedThreshold");//, 1000);
+  desc.add<int>("ClusterThreshold_L1");//, 4000);
+  desc.add<int>("ClusterThreshold");//, 4000);
+  desc.add<double>("ElectronPerADCGain");//, 135.);
   desc.add<bool>("Phase2Calibration", false);
   desc.add<int>("Phase2ReadoutMode", -1);
   desc.add<double>("Phase2DigiBaseline", 1200.);
@@ -137,6 +137,8 @@ void PixelThresholdClusterizer::clusterizeDetUnitT(const T& input,
 
   theDetid = input.detId();
 
+  bool isBarrel = (DetId(theDetid).subdetId() == PixelSubdetector::PixelBarrel);
+
   // Set separate cluster threshold for L1 (needed for phase1)
   auto clusterThreshold = theClusterThreshold;
   theLayer = (DetId(theDetid).subdetId() == 1) ? tTopo->pxbLayer(theDetid) : 0;
@@ -155,7 +157,7 @@ void PixelThresholdClusterizer::clusterizeDetUnitT(const T& input,
     // so we don't want to call "make_cluster" for these cases
     if (theBuffer(theSeeds[i]) >= theSeedThreshold) {  // Is this seed still valid?
       //  Make a cluster around this seed
-      SiPixelCluster&& cluster = make_cluster(theSeeds[i], output);
+      SiPixelCluster&& cluster = make_cluster(theSeeds[i], output, isBarrel);
 
       //  Check if the cluster is above threshold
       // (TO DO: one is signed, other unsigned, gcc warns...)
@@ -388,7 +390,7 @@ int PixelThresholdClusterizer::calibrate(int adc, int col, int row) {
 //!  \brief The actual clustering algorithm: group the neighboring pixels around the seed.
 //----------------------------------------------------------------------------
 SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::PixelPos& pix,
-                                                       edmNew::DetSetVector<SiPixelCluster>::FastFiller& output) {
+                                                       edmNew::DetSetVector<SiPixelCluster>::FastFiller& output, bool isbarrel) {
   //First we acquire the seeds for the clusters
   int seed_adc;
   stack<SiPixelCluster::PixelPos, vector<SiPixelCluster::PixelPos> > dead_pixel_stack;
@@ -411,9 +413,15 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::Pix
     else {
   */
   seed_adc = theBuffer(pix.row(), pix.col());
-  theBuffer.set_adc(pix, 1);
   //  }
+  
 
+if (isbarrel) {
+  std::cout<<"seed "<<pix.row()<<" "<<pix.col()<<" "<<seed_adc<<" "<<theSeedThreshold<<" "<<thePixelThreshold<<endl;
+}
+
+  theBuffer.set_adc(pix, 1);
+  
   AccretionCluster acluster;
   acluster.add(pix, seed_adc);
 
@@ -433,7 +441,8 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster(const SiPixelCluster::Pix
           SiPixelCluster::PixelPos newpix(r, c);
           if (!acluster.add(newpix, theBuffer(r, c)))
             goto endClus;
-          theBuffer.set_adc(newpix, 1);
+	 if (isbarrel) {std::cout<<"add "<<r<<" "<<c<<" "<<theBuffer(r,c)<<endl;} 
+         theBuffer.set_adc(newpix, 1);
         }
 
         /* //Commenting out the addition of dead pixels to the cluster until further testing -- dfehling 06/09
@@ -483,7 +492,7 @@ endClus:
       theBuffer.set_adc(deadpix, 1);
 
       //Clusterize the split cluster using the dead pixel as a seed
-      SiPixelCluster second_cluster = make_cluster(deadpix, output);
+      SiPixelCluster second_cluster = make_cluster(deadpix, output, isbarrel);
 
       //If both clusters would normally have been found by the clusterizer, put them into output
       if (second_cluster.charge() >= clusterThreshold && first_cluster.charge() >= clusterThreshold) {

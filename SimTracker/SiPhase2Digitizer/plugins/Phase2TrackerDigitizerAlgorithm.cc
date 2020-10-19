@@ -404,11 +404,13 @@ void Phase2TrackerDigitizerAlgorithm::induce_signal(
     //  << " enter induce_signal, " << topol->pitch().first << " " << topol->pitch().second;
 
 
-  bool IsBarrel = (DetId(detID).subdetId() == PixelSubdetector::PixelBarrel);
 
-if (IsBarrel){
+//Outputs for debugging
+  //bool IsBarrel = (DetId(detID).subdetId() == PixelSubdetector::PixelBarrel);
+
+/*if (IsBarrel){
    std::cout<<  "Phase2TrackerDigitizerAlgorithm"    << " enter induce_signal, " <<detID<<" "<< topol->pitch().first << " " << topol->pitch().second <<" "<< pos_glob << " "<< topol->nrows() << " "<< topol->ncolumns()<< " "<< topol->rocsY() << " "<< topol->rocsX() << " " << topol->rowsperroc() << " "<< topol->colsperroc()<<std::endl;
-		}
+		}*/
 
 
   // local map to store pixels hit by 1 Hit.
@@ -424,9 +426,10 @@ if (IsBarrel){
     float SigmaY = v.sigma_y();             //               in y
     float Charge = v.amplitude();           // Charge amplitude
 
-if (IsBarrel){
+/*if (IsBarrel){
    std::cout<< " cloud " << v.position().x() << " " << v.position().y() << " " << v.sigma_x() << " " << v.sigma_y() << " " << v.amplitude() <<std::endl;
-}
+}*/
+
     // Find the maximum cloud spread in 2D plane , assume 3*sigma
     float CloudRight = CloudCenterX + clusterWidth_ * SigmaX;
     float CloudLeft = CloudCenterX - clusterWidth_ * SigmaX;
@@ -463,11 +466,12 @@ if (IsBarrel){
 
 
 
-if (IsBarrel){
+/*if (IsBarrel){
 
 	// std::cout <<"Phase2TrackerDigitizerAlgorithm"
         std::cout << " right-up " << PointRightUp << " " << mp.x() << " " << mp.y() << " " << IPixRightUpX << " " << IPixRightUpY<<std::endl;
-		}
+		}*/
+
     mp = topol->measurementPosition(PointLeftDown);
     int IPixLeftDownX = static_cast<int>(std::floor(mp.x()));
     //int IPixLeftDownY = static_cast<int>(std::floor(mp.y()));
@@ -480,10 +484,12 @@ if (IsBarrel){
 
 
 
-if (IsBarrel){
+/*if (IsBarrel){
     //std::cout << "Phase2TrackerDigitizerAlgorithm" 
     std::cout << " left-down " << PointLeftDown << " " << mp.x() << " " << mp.y()  << " " << IPixLeftDownX << " " << IPixLeftDownY<<std::endl;
-	}
+	}*/
+
+
     // Check detector limits to correct for pixels outside range.
     //int numColumns = topol->ncolumns();  // det module number of cols&rows
     //int numRows = topol->nrows();
@@ -668,8 +674,8 @@ if (IsBarrel){
               pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
-if (IsBarrel){
-	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;        } 
+/*if (IsBarrel){
+	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;        }*/ 
         }
 
 			}  }
@@ -694,8 +700,8 @@ if (IsBarrel){
               pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
-if (IsBarrel){
-	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;        } 
+/*if (IsBarrel){
+	  std::cout<<"amplitude "<< topol->isBricked()<< " " <<Charge << " " << ix << " " <<iy <<" "<< ChargeFraction << std::endl;        }*/ 
         }
 
 			}  }

@@ -252,7 +252,16 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   int Q_l_X;  //!< Q of the last   pixel  in X
   int Q_f_Y;  //!< Q of the first  pixel  in Y
   int Q_l_Y;  //!< Q of the last   pixel  in Y
-  collect_edge_charges(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y);
+  int Q_f_b;
+  int Q_l_b;
+  int lowest_is_bricked = 1;
+  int highest_is_bricked = 0; 
+  //theDetParam.theTopol->isBricked();
+
+
+ 
+  if (theDetParam.theTopol->isBricked()) collect_edge_charges_bricked(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y, Q_f_b, Q_l_b, lowest_is_bricked, highest_is_bricked);
+  else collect_edge_charges(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y);
 
   //--- Find the inner widths along X and Y in one shot.  We
   //--- compute the upper right corner of the inner pixels
@@ -268,6 +277,15 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   //--- Lower Left corner of Upper Right pixel -- in measurement frame
   MeasurementPoint meas_LLcorn_URpix(theClusterParam.theCluster->maxPixelRow(),
                                      theClusterParam.theCluster->maxPixelCol());
+  if (theDetParam.theTopol->isBricked()){ 
+
+ 	if (lowest_is_bricked) meas_URcorn_LLpix = MeasurementPoint(theClusterParam.theCluster->minPixelRow() + 1.0,
+                             theClusterParam.theCluster->minPixelCol() + 1.5);
+
+        if (highest_is_bricked) meas_LLcorn_URpix = MeasurementPoint(theClusterParam.theCluster->maxPixelRow(), theClusterParam.theCluster->maxPixelCol() + 0.5);
+
+					}
+
 
   //--- These two now converted into the local
   LocalPoint local_URcorn_LLpix;
@@ -331,7 +349,27 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
     cout << "\t >>> Generic:: processing Y" << endl;
 #endif
 
-  float yPos = SiPixelUtils::generic_position_formula(
+float yPos;
+
+if (theDetParam.theTopol->isBricked()) yPos = SiPixelUtils::bricked_y_position_formula(
+      theClusterParam.theCluster->sizeY(),
+      Q_f_Y,
+      Q_l_Y,
+      Q_f_b,
+      Q_l_b,
+      local_URcorn_LLpix.y(),
+      local_LLcorn_URpix.y(),
+      chargeWidthY,  // lorentz shift in cm
+      theDetParam.theThickness,
+      theClusterParam.cotbeta,
+      theDetParam.thePitchY,
+      theDetParam.theRecTopol->isItBigPixelInY(theClusterParam.theCluster->minPixelCol()),
+      theDetParam.theRecTopol->isItBigPixelInY(theClusterParam.theCluster->maxPixelCol()),
+      the_eff_charge_cut_lowY,
+      the_eff_charge_cut_highY,
+      the_size_cutY);  // cut for eff charge width &&&
+
+else yPos = SiPixelUtils::generic_position_formula(
       theClusterParam.theCluster->sizeY(),
       Q_f_Y,
       Q_l_Y,
@@ -395,6 +433,11 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   return pos_in_local;
 }
 
+
+
+
+
+
 //-----------------------------------------------------------------------------
 //!  Collect the edge charges in x and y, in a single pass over the pixel vector.
 //!  Calculate charge in the first and last pixel projected in x and y
@@ -443,6 +486,106 @@ void PixelCPEGeneric::collect_edge_charges(ClusterParam& theClusterParamBase,  /
 
   return;
 }
+
+
+
+
+void PixelCPEGeneric::collect_edge_charges_bricked(ClusterParam& theClusterParamBase,  //!< input, the cluster
+                                           int& Q_f_X,                         //!< output, Q first  in X
+                                           int& Q_l_X,                         //!< output, Q last   in X
+                                           int& Q_f_Y,                         //!< output, Q first  in Y
+                                           int& Q_l_Y,                          //!< output, Q last   in Y
+                                           int& Q_f_b,                     
+                                           
+					   int& Q_l_b,                    //Bricked correction
+					   
+					   int& lowest_is_bricked,                    //Bricked correction
+					   
+					   int& highest_is_bricked                    //Bricked correction
+) const {
+  ClusterParamGeneric& theClusterParam = static_cast<ClusterParamGeneric&>(theClusterParamBase);
+
+  // Initialize return variables.
+  Q_f_X = Q_l_X = 0.0;
+  Q_f_Y = Q_l_Y = 0.0;
+  Q_f_b = Q_l_b = 0.0;
+
+  // Obtain boundaries in index units
+  int xmin = theClusterParam.theCluster->minPixelRow();
+  int xmax = theClusterParam.theCluster->maxPixelRow();
+  int ymin = theClusterParam.theCluster->minPixelCol();
+  int ymax = theClusterParam.theCluster->maxPixelCol();
+
+  //bool lowest_is_bricked = 1; //Tells you if the lowest pixel of the cluster is on a bricked row or not.
+  //bool highest_is_bricked = 0; 
+
+
+  int Q_t_b = 0; //Sums up the charge of the non-bricked pixels at the top of the clusters in the event that the highest pixel of the cluster is on a bricked row.
+  int Q_t_nb = 0;
+  int Q_b_b = 0;
+  int Q_b_nb = 0;
+
+//This is included in the main loop.
+  // Iterate over the pixels to find out if a bricked row is lowest/highest.
+ /*  int isize = theClusterParam.theCluster->size();
+  for (int i = 0; i != isize; ++i) {
+    auto const& pixel = theClusterParam.theCluster->pixel(i);
+
+    // Y projection
+    if (pixel.y == ymin && !(pixel.x%2) ) lowest_is_bricked = 0;
+    if (pixel.y == ymax && (pixel.x%2) ) highest_is_bricked = 1;
+  } */
+	 
+
+			 
+  // Iterate over the pixels.
+  int isize = theClusterParam.theCluster->size();
+  for (int i = 0; i != isize; ++i) {
+    auto const& pixel = theClusterParam.theCluster->pixel(i);
+    // ggiurgiu@fnal.gov: add pixel charge truncation
+    int pix_adc = pixel.adc;
+    if (UseErrorsFromTemplates_ && TruncatePixelCharge_)
+      pix_adc = std::min(pix_adc, theClusterParam.pixmx);
+
+    //
+    // X projection
+    if (pixel.x == xmin)
+      Q_f_X += pix_adc;
+    if (pixel.x == xmax)
+      Q_l_X += pix_adc;
+    //
+    // Y projection
+    if (pixel.y == ymin) {
+	Q_f_Y += pix_adc; 
+	if (pixel.x%2) Q_b_nb+=pix_adc;
+	else lowest_is_bricked = 0;
+
+			} 
+    
+    if ( pixel.y == ymin + 1 && !(pixel.x%2)  ) Q_b_b+=pix_adc; 
+ 
+    if (pixel.y == ymax) {
+      Q_l_Y += pix_adc;
+      if (!(pixel.x%2)) Q_t_b+=pix_adc;
+      else highest_is_bricked = 1;
+
+			} 
+    
+    if ( pixel.y == ymax - 1 && (pixel.x%2)  ) Q_t_nb+=pix_adc; 
+}
+
+
+  if (lowest_is_bricked) Q_f_b = Q_b_b;
+  else Q_f_b = Q_b_nb;
+ 	
+  if (highest_is_bricked) Q_l_b = -Q_t_b;
+  else Q_l_b = -Q_t_nb;
+
+  return;
+}
+
+
+
 
 //==============  INFLATED ERROR AND ERRORS FROM DB BELOW  ================
 

@@ -4,3 +4,9 @@ __init__.py
 .#*
 #*#
 *~
+*.log
+*.swn
+*.swo
+*.swl
+*.swm
+*.root

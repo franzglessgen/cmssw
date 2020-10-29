@@ -23,4 +23,9 @@
 </library>
 <library   file="BrickedDigisTest.cc" name="BrickedDigisTest">
   <flags   EDM_PLUGIN="1"/>
+  <flags CXXFLAGS="-g3"/>
+</library>
+<library   file="BrickedTBValidation.cc" name="BrickedTBValidation">
+  <flags   EDM_PLUGIN="1"/>
+  <flags CXXFLAGS="-g3"/>
 </library>

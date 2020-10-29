@@ -29,3 +29,6 @@
 <library file="Triplet.cc" name="Triplet">
   <flags EDM_PLUGIN="1"/>
 </library>
+<library file="ReadBrickedClusters.cc" name="ReadBrickedClusters">
+  <flags EDM_PLUGIN="1"/>
+</library>

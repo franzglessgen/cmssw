@@ -40,6 +40,22 @@
 #include <functional>
 #include <cstdint>
 
+
+
+// To use root histos
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
+
+// For ROOT
+#include <TROOT.h>
+#include <TChain.h>
+#include <TFile.h>
+#include <TF1.h>
+#include <TH2F.h>
+#include <TH1F.h>
+#include <TProfile.h>
+#include <TProfile2D.h>
+
 //class MonitorElement;
 class GeomDet;
 class PSimHit;
@@ -158,10 +174,13 @@ private:
   std::string geomType_;
 
   // The tracks entry angle to accept (if any)
+
+  int Nxbins_;
   std::vector<double> tracksEntryAngleX_;
   std::vector<double> tracksEntryAngleY_;
   // The actual angles already parsed (0- x aix, 1- y axis)
   std::map<unsigned int, std::pair<double, double>> active_entry_angles_;
+
 
   //std::vector<double> phiValues;
   // EDM token for the input collections
@@ -169,5 +188,66 @@ private:
   const edm::EDGetTokenT<edm::DetSetVector<PixelDigi>> digiToken_;
   const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink>> digiSimLinkToken_;
   const edm::EDGetTokenT<edm::SimTrackContainer> simTrackToken_;
+
+  int MEUNIT = 100; 
+
+
+  TH1F *hlayer;
+  TH1F *hdetunit;
+  TH1F *hangle;
+  TH1I *H_ME_Unit; 
+  TH2F *H_track_XYMap_[100];
+  TH2F *H_track_RZMap_[100];
+  TH1F *H_digi_charge1D_[100];
+  TH2F *H_digi_XYMap_;
+  TH2F *H_digi_RZMap_;
+  TH1F *H_clsize1D_[100];
+  TH1F *H_clsize1Dx_[100];
+  TH1F *H_clsize1Dy_[100];
+  TH1F *H_charge1D_[100];
+  TH1F *H_dx1D_[100];
+  TH1F *H_dy1D_[100];
+  
+	
+
+/*
+  TProfile2D *H_eff_cell_[][3];
+  TH2F *H_pshpos_cell_[3];
+	    //Position
+  TH2F *H_position_cell_[3];
+            // Residuals
+  TProfile2D *H_dx_cell_[3];
+  TProfile2D *H_dy_cell_[3];
+            // Charge
+  TProfile2D *H_charge_cell_[3];
+            // Cluster size
+  TProfile2D *H_clsize_cell_[3];
+  */
+  TProfile2D *H_eff_cell_[100][3];
+  TH2F *H_pshpos_cell_[100][3];
+	    //Position
+  TH2F *H_position_cell_[100][3];
+            // Residuals
+  TProfile *H_dxvsx_cell_[100][3];
+  TProfile *H_dyvsy_cell_[100][3];
+            // 2D
+  TProfile2D *H_dx_cell_[100][3];
+  TProfile2D *H_dy_cell_[100][3];
+            // Charge
+  TProfile2D *H_charge_cell_[100][3];
+            // Cluster size
+  TProfile2D *H_clsize_cell_[100][3];
 };
 #endif
+
+
+
+
+
+
+
+
+
+
+
+

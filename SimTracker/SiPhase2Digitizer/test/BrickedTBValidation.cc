@@ -39,6 +39,8 @@ BrickedTBValidation::BrickedTBValidation(const edm::ParameterSet& iConfig)
     : config_(iConfig),
       geomType_(iConfig.getParameter<std::string>("GeometryType")),
       //phiValues(iConfig.getParameter<std::vector<double> >("PhiAngles")),
+      Nxbins_(
+          iConfig.getUntrackedParameter<int>("Nxbins")),
       tracksEntryAngleX_(
           iConfig.getUntrackedParameter<std::vector<double>>("TracksEntryAngleX", std::vector<double>())),
       tracksEntryAngleY_(
@@ -117,6 +119,81 @@ BrickedTBValidation::~BrickedTBValidation() {
 //
 void BrickedTBValidation::dqmBeginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
   edm::LogInfo("BrickedTBValidation") << "Initialize BrickedTBValidation ";
+
+  edm::Service<TFileService> fs;
+
+  // Histos go to a subdirectory "PixRecHits")
+  //TFileDirectory subDir = fs->mkdir( "mySubDirectory" );
+  //TFileDirectory subSubDir = subDir.mkdir( "mySubSubDirectory" );
+
+  // put here whatever you want to do at the beginning of the job
+  //hFile = new TFile ( "histo.root", "RECREATE" );
+
+  int meunit_ini = 100;
+  std::cout<<Nxbins_<<std::endl; 
+
+  
+  hlayer = fs->make<TH1F>("hlayer", "Det layer", 100, 0, 100);
+  hdetunit = fs->make<TH1F>("hdetunit", "Det unit", 1000, 300000000., 350000000.);
+  hangle = fs->make<TH1F>("hangle", "Angle at entry", 1000, -10, 10);
+  H_ME_Unit = fs->make<TH1I>("H_ME_Unit", "Monitor Element Unit", 200, 0, 200);
+ 
+
+  H_digi_XYMap_ = fs->make<TH2F>("H_digi_XYMap", "XY Digi Map", 100, 0, 100, 100, 0, 100);
+  H_digi_RZMap_ = fs->make<TH2F>("H_digi_RZMap", "XY Digi Map", 100, 0, 100, 100, 0, 100);
+  
+  for (int s = 0; s<meunit_ini; s++){
+  
+  H_track_XYMap_[s] = fs->make<TH2F>( Form("H_track_XYMap%i", s) , "XY Track Map", 100, -20, 20, 100, -20, 20);
+  H_track_RZMap_[s] = fs->make<TH2F>( Form("H_track_RZMap%i", s), "RZ Track Map", 100, 0, 100, 100, 0, 20);
+  H_digi_charge1D_[s] = fs->make<TH1F>( Form("H_digi_charge1D%i", s), "Digi charge 1D", 200, 0, 200);
+  
+  
+
+  H_clsize1D_[s] = fs->make<TH1F>( Form("H_clsize1D%i", s), "Cluster size 1D", 30, 0, 30);
+  H_clsize1Dx_[s] = fs->make<TH1F>( Form("H_clsize1Dx%i", s), "Cluster size 1D", 30, 0, 30);
+  H_clsize1Dy_[s] = fs->make<TH1F>( Form("H_clsize1Dy%i", s), "Cluster size 1D", 30, 0, 30);
+  H_charge1D_[s] = fs->make<TH1F>( Form("H_charge1D%i", s), "Charge 1D", 50, 0, 1000);
+  
+  H_dx1D_[s] = fs->make<TH1F>( Form("H_dx1D%i", s), "Residuals x", 200, -30, 30);
+  H_dy1D_[s] = fs->make<TH1F>( Form("H_dy1D%i", s), "Residuals y", 200, -50, 50);	
+
+
+  H_eff_cell_[s][0] = fs->make<TProfile2D>( Form("H_eff_cell0%i", s), "Efficiency whole detector",100, -10000, 10000, 100, -10000, 10000);
+  H_eff_cell_[s][1] = fs->make<TProfile2D>( Form("H_eff_cell1%i", s), "Efficiency cell 1",100, 0, 100, 100, 0, 150);
+  H_eff_cell_[s][2] = fs->make<TProfile2D>( Form("H_eff_cell2%i", s), "Efficiency cell 2",100, 0, 100, 100, 0, 250);
+  
+  H_pshpos_cell_[s][0] = fs->make<TH2F>( Form("H_pshpos_cell0%i", s),"Pos whole detector",100, -10000, 10000, 100, -10000, 10000);
+  H_pshpos_cell_[s][1] = fs->make<TH2F>( Form("H_pshpos_cell1%i", s), "Pos cell 1",100, 0, 100, 100, 0, 150);
+  H_pshpos_cell_[s][2] = fs->make<TH2F>( Form("H_pshpos_cell2%i", s), "Pos cell 2",100, 0, 100, 100, 0, 250);
+
+  H_position_cell_[s][0] = fs->make<TH2F>( Form("H_position_cell0%i", s),"Pos whole detector",100, -10000, 10000, 100, -10000, 10000);
+  H_position_cell_[s][1] = fs->make<TH2F>( Form("H_position_cell1%i", s), "Pos cell 1",100, 0, 100, 100, 0, 150);
+  H_position_cell_[s][2] = fs->make<TH2F>( Form("H_position_cell2%i", s), "Pos cell 2",100, 0, 100, 100, 0, 250);
+
+  H_dx_cell_[s][0] = fs->make<TProfile2D>( Form("H_dx_cell0%i", s), "Dx whole detector", 100, -10000, 10000, 100, -10000, 10000);
+  H_dx_cell_[s][1] = fs->make<TProfile2D>( Form("H_dx_cell1%i", s), "Dx cell 1",100, 0, 100, 100, 0, 150);
+  H_dx_cell_[s][2] = fs->make<TProfile2D>( Form("H_dx_cell2%i", s), "Dx cell 2",100, 0, 100, 200, 0, 200);
+            
+  H_dyvsy_cell_[s][0] = fs->make<TProfile>( Form("H_dyvsy_cell0%i", s), "Dyvsy whole detector", 100, -10000, 10000);
+  H_dyvsy_cell_[s][1] = fs->make<TProfile>( Form("H_dyvsy_cell1%i", s), "Dyvsy cell 1",50, 0, 100);
+  H_dyvsy_cell_[s][2] = fs->make<TProfile>( Form("H_dyvsy_cell2%i", s), "Dyvsy cell 2",100, 0 , 200);
+  
+  H_dxvsx_cell_[s][0] = fs->make<TProfile>( Form("H_dxvsx_cell0%i", s), "Dxvsx whole detector", 100, -10000, 10000);
+  H_dxvsx_cell_[s][1] = fs->make<TProfile>( Form("H_dxvsx_cell1%i", s), "Dxvsx cell 1",25, 0, 25);
+  H_dxvsx_cell_[s][2] = fs->make<TProfile>( Form("H_dxvsx_cell2%i", s), "Dxvsx cell 2",50,0 , 50);
+  
+  H_dy_cell_[s][0] = fs->make<TProfile2D>( Form("H_dy_cell0%i", s), "Dy whole detector", 100, -10000, 10000, 100, -10000, 10000);
+  H_dy_cell_[s][1] = fs->make<TProfile2D>( Form("H_dy_cell1%i", s), "Dy cell 1",30, 0, 30, 100, 0, 100);
+  H_dy_cell_[s][2] = fs->make<TProfile2D>( Form("H_dy_cell2%i", s), "Dy cell 2",60, 0, 60, 200, 0, 200);
+
+  H_charge_cell_[s][0] = fs->make<TProfile2D>( Form("H_q_cell0%i", s), "Q whole detector", 100, -10000, 10000, 100, -10000, 10000);
+  H_charge_cell_[s][1] = fs->make<TProfile2D>( Form("H_q_cell1%i", s), "Q cell 1",100, 0, 100, 100, 0, 150);
+  H_charge_cell_[s][2] = fs->make<TProfile2D>( Form("H_q_cell2%i", s), "Q cell 2",100, 0, 100, 100, 0, 250);
+
+  H_clsize_cell_[s][0] = fs->make<TProfile2D>( Form("H_cls_cell0%i", s), "ClS whole detector", 100, -10000, 10000, 100, -10000, 10000);
+  H_clsize_cell_[s][1] = fs->make<TProfile2D>( Form("H_cls_cell1%i", s), "ClS cell 1",100, 0, 100, 100, 0, 150);
+  H_clsize_cell_[s][2] = fs->make<TProfile2D>( Form("H_cls_cell2%i", s), "ClS cell 2",100, 0, 100, 100, 0, 250);}
 }
 //
 // -- Analyze
@@ -183,15 +260,23 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
 
     const auto detId = dunit->geographicalId();
     const int layer = topo->layer(detId);
+   
+    //std::cout<<layer<<std::endl; 
+    hlayer->Fill(layer);  
+    hdetunit->Fill(detId);  
+    //std::cout<<"det "<<detId<<" side "<<topo->side(detId)<<std::endl;  
+
     // Get the relevant histo key
     const auto& me_unit = meUnit_(tkDetUnit->type().isBarrel(), layer, topo->side(detId));
 
+    H_ME_Unit ->Fill(meUnit_(tkDetUnit->type().isBarrel(), layer, topo->side(detId)));
     // Find simulated digis links on this det unit
     const auto& it_simdigilink = simdigis->find(detId);
     if (it_simdigilink == simdigis->end()) {
       // FIXME: CHeck if there is any digi ... Should not
       continue;
     }
+
 
     // Find created RAW digis on this det unit
     const auto& it_digis = digis->find(detId);
@@ -231,6 +316,7 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
 
       // -- Loop over the PSimHits and match with the digi clusters
       for (const auto* ps : current_psimhits) {
+
         // Check user conditions to accept the hits
         if (!use_this_track_(ps)) {
           continue;
@@ -242,9 +328,18 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
         vME_track_dxdzAngle_[me_unit]->Fill(ps->thetaAtEntry());
         vME_track_dydzAngle_[me_unit]->Fill(ps->phiAtEntry());
 
+
+        H_track_XYMap_[me_unit]->Fill(tk_ep_gbl.x(), tk_ep_gbl.y());
+        H_track_RZMap_[me_unit]->Fill(tk_ep_gbl.z(), std::hypot(tk_ep_gbl.x(), tk_ep_gbl.y()));
+        //H_track_dxdzAngle_[me_unit]->Fill(ps->thetaAtEntry());
+        //H_track_dydzAngle_[me_unit]->Fill(ps->phiAtEntry());
+
+
+
         // Obtain the detected position of the sim particle:
         // the middle point between the entry and the exit
         const auto psh_pos = tkDetUnit->specificTopology().measurementPosition(ps->localPosition());
+
 
         // Build the digi MC-truth clusters by matching each Particle
         // sim hit position pixel cell. The matching condition:
@@ -274,20 +369,49 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
           used_channel.insert(ch);
           // Fill the digi histograms
           vME_digi_charge1D_[me_unit]->Fill(current_digi.adc());
-          std::cout<<current_digi.adc()<<std::endl;  
+          
+	  H_digi_charge1D_[me_unit]->Fill(current_digi.adc());
+	
+	  //std::cout<<" is bricked "<<tkDetUnit->specificTopology().isBricked()<<std::endl;
+
 	
 	// Fill maps: get the position in the sensor local frame to convert into global
           const LocalPoint digi_local_pos(
               tkDetUnit->specificTopology().localPosition(MeasurementPoint(current_digi.row(), current_digi.column())));
-          const GlobalPoint digi_global_pos(dunit->surface().toGlobal(digi_local_pos));
+
+	  LocalPoint digi_local_pos_b;
+	  LocalPoint digi_local_pos_b1(digi_local_pos.x(), digi_local_pos.y() + 0.5);
+	  LocalPoint digi_local_pos_b2(digi_local_pos.x(), digi_local_pos.y());
+
+
+	  if (tkDetUnit->specificTopology().isBricked() && (current_digi.row()%2)) 
+	  digi_local_pos_b = digi_local_pos_b1;
+	  else digi_local_pos_b = digi_local_pos_b2;
+
+          const GlobalPoint digi_global_pos(dunit->surface().toGlobal(digi_local_pos_b));
           vME_digi_XYMap_->Fill(digi_global_pos.x(), digi_global_pos.y());
           vME_digi_RZMap_->Fill(digi_global_pos.z(), std::hypot(digi_global_pos.x(), digi_global_pos.y()));
+
+
+
+          H_digi_XYMap_->Fill(digi_global_pos.x(), digi_global_pos.y());
+          H_digi_RZMap_->Fill(digi_global_pos.z(), std::hypot(digi_global_pos.x(), digi_global_pos.y()));
+
           // Create the MC-cluster
           cluster_tot += current_digi.adc();
           // Use the center of the pixel
           cluster_position.first += current_digi.adc() * (current_digi.row() + 0.5);
-          cluster_position.second += current_digi.adc() * (current_digi.column() + 0.5);
-          // Size
+          
+	  //std::cout<<(current_digi.row()%2)<<std::endl; 
+
+	
+	  if (tkDetUnit->specificTopology().isBricked() && (current_digi.row()%2)) 
+	  cluster_position.second += current_digi.adc() * (current_digi.column() + 0.5+ 0.5);
+          
+
+	  else cluster_position.second += current_digi.adc() * (current_digi.column() + 0.5);
+
+	  // Size
           cluster_size_xy.first.insert(current_digi.row());
           cluster_size_xy.second.insert(current_digi.column());
           ++cluster_size;
@@ -297,7 +421,12 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
         vME_clsize1Dx_[me_unit]->Fill(cluster_size_xy.first.size());
         vME_clsize1Dy_[me_unit]->Fill(cluster_size_xy.second.size());
 
-        // mean weighted
+        H_clsize1D_[me_unit]->Fill(cluster_size);
+        H_clsize1Dx_[me_unit]->Fill(cluster_size_xy.first.size());
+        H_clsize1Dy_[me_unit]->Fill(cluster_size_xy.second.size());
+        
+
+	// mean weighted
         cluster_position.first /= double(cluster_tot);
         cluster_position.second /= double(cluster_tot);
 
@@ -317,7 +446,11 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
           vME_charge1D_[me_unit]->Fill(cluster_tot);
           vME_dx1D_[me_unit]->Fill(dx_um);
           vME_dy1D_[me_unit]->Fill(dy_um);
-        }
+
+          H_charge1D_[me_unit]->Fill(cluster_tot);
+          H_dx1D_[me_unit]->Fill(dx_um);
+          H_dy1D_[me_unit]->Fill(dy_um);
+	 }
         // Histograms per cell
         for (unsigned int i = 0; i < vME_position_cell_[me_unit].size(); ++i) {
           // Convert the PSimHit center position to the IxI-cell
@@ -326,6 +459,9 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
           vME_eff_cell_[me_unit][i]->Fill(
               icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, is_cluster_present);
           vME_pshpos_cell_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um);
+          H_eff_cell_[me_unit][i]->Fill(
+              icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, is_cluster_present);
+          H_pshpos_cell_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um);
           // Digi clusters related histoos
           if (is_cluster_present) {
             // Convert to the i-cell
@@ -341,6 +477,22 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
             // Cluster size
             vME_clsize_cell_[me_unit][i]->Fill(
                 icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, cluster_size);
+
+
+            // Position
+            H_position_cell_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um);
+            // Residuals
+            H_dx_cell_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, dx_um);
+            H_dxvsx_cell_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, dx_um);
+            H_dy_cell_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, dy_um);
+            H_dyvsy_cell_[me_unit][i]->Fill(icell_psh.second * 1.0_inv_um, dy_um);
+            // Charge
+            H_charge_cell_[me_unit][i]->Fill(
+                icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, cluster_tot);
+            // Cluster size
+            H_clsize_cell_[me_unit][i]->Fill(
+                icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, cluster_size);
+
           }
         }
       }

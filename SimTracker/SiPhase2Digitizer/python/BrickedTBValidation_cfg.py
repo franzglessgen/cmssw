@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 from Configuration.Eras.Era_Phase2_cff import Phase2
 process = cms.Process('digiTest',Phase2)
 process.maxEvents = cms.untracked.PSet(
-	input = cms.untracked.int32(10)
+	input = cms.untracked.int32(1000)
  )
  #process.MessageLogger = cms.Service("MessageLogger",
 #    debugModules = cms.untracked.vstring('siPixelRawData'),
@@ -38,7 +38,13 @@ process.configurationMetadata = cms.untracked.PSet(
      annotation = cms.untracked.string('step1 nevts:1'), 
      name = cms.untracked.string('Applications')
  )
-# Output definition 
+# Output definition
+
+
+process.TFileService = cms.Service("TFileService",
+    fileName = cms.string('histo_TB_meunit.root')
+)
+ 
 process.DQMoutput = cms.OutputModule("PoolOutputModule",
      splitLevel = cms.untracked.int32(0),
      outputCommands = process.DQMEventContent.outputCommands,

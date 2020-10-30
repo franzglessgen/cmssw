@@ -96,8 +96,9 @@ Dy = cms.PSet(
     )
 
 dqmcell = DQMEDAnalyzer('BrickedTBValidation',
-    TracksEntryAngleX = cms.untracked.vdouble(-np.radians(2.0),np.radians(2.0)),
-    TracksEntryAngleY = cms.untracked.vdouble(-np.radians(2.0),np.radians(2.0)),
+    TracksEntryAngleX = cms.untracked.vdouble(-np.radians(180.0),np.radians(180.0)),#2 deg
+    TracksEntryAngleY = cms.untracked.vdouble(-np.radians(180.0),np.radians(180.0)),
+    Nxbins = cms.untracked.int32(201),
     TopFolderName = cms.string("PixelCell"),
     PixelDigiSource = cms.InputTag("simSiPixelDigis","Pixel"),
     PixelDigiSimSource = cms.InputTag("simSiPixelDigis", "Pixel"),

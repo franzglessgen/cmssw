@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 from Configuration.Eras.Era_Phase2_cff import Phase2
 process = cms.Process('digiTest',Phase2)
 process.maxEvents = cms.untracked.PSet(
-	input = cms.untracked.int32(1000)
+	input = cms.untracked.int32(10000)
  )
  #process.MessageLogger = cms.Service("MessageLogger",
 #    debugModules = cms.untracked.vstring('siPixelRawData'),
@@ -29,7 +29,7 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
 
 process.source = cms.Source("PoolSource",
      fileNames =  cms.untracked.vstring(
-         'file:Digis_1000.root'
+         'file:Digis_10000.root'
        )
  )
  # Production Info
@@ -42,7 +42,7 @@ process.configurationMetadata = cms.untracked.PSet(
 
 
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('histo_TB_meunit.root')
+    fileName = cms.string('histo_TB_10000.root')
 )
  
 process.DQMoutput = cms.OutputModule("PoolOutputModule",

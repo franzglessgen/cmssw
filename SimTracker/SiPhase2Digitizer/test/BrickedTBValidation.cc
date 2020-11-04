@@ -39,8 +39,12 @@ BrickedTBValidation::BrickedTBValidation(const edm::ParameterSet& iConfig)
     : config_(iConfig),
       geomType_(iConfig.getParameter<std::string>("GeometryType")),
       //phiValues(iConfig.getParameter<std::vector<double> >("PhiAngles")),
-      Nxbins_(
-          iConfig.getUntrackedParameter<int>("Nxbins")),
+      Nxbins_cell0(
+          iConfig.getUntrackedParameter<int>("Nxbins_cell0")),
+      Nxbins_cell1(
+          iConfig.getUntrackedParameter<int>("Nxbins_cell1")),
+      Nxbins_cell2(
+          iConfig.getUntrackedParameter<int>("Nxbins_cell2")),
       tracksEntryAngleX_(
           iConfig.getUntrackedParameter<std::vector<double>>("TracksEntryAngleX", std::vector<double>())),
       tracksEntryAngleY_(
@@ -130,7 +134,6 @@ void BrickedTBValidation::dqmBeginRun(const edm::Run& iRun, const edm::EventSetu
   //hFile = new TFile ( "histo.root", "RECREATE" );
 
   int meunit_ini = 100;
-  std::cout<<Nxbins_<<std::endl; 
 
   
   hlayer = fs->make<TH1F>("hlayer", "Det layer", 100, 0, 100);
@@ -142,10 +145,15 @@ void BrickedTBValidation::dqmBeginRun(const edm::Run& iRun, const edm::EventSetu
   H_digi_XYMap_ = fs->make<TH2F>("H_digi_XYMap", "XY Digi Map", 100, 0, 100, 100, 0, 100);
   H_digi_RZMap_ = fs->make<TH2F>("H_digi_RZMap", "XY Digi Map", 100, 0, 100, 100, 0, 100);
   
-  for (int s = 0; s<meunit_ini; s++){
+  H_track_XYMap_ = fs->make<TH2F>("H_track_RZMap", "RZ Track Map", 100, 0, 100, 100, 0, 100);
+  H_track_RZMap_ = fs->make<TH2F>("H_track_RZMap", "RZ Track Map", 100, 0, 100, 100, 0, 100);
   
-  H_track_XYMap_[s] = fs->make<TH2F>( Form("H_track_XYMap%i", s) , "XY Track Map", 100, -20, 20, 100, -20, 20);
-  H_track_RZMap_[s] = fs->make<TH2F>( Form("H_track_RZMap%i", s), "RZ Track Map", 100, 0, 100, 100, 0, 20);
+
+  for (int s = 0; s<meunit_ini; s++){
+
+
+  H_track_dxdzAngle_[s] = fs->make<TH1F>( Form("H_track_dxdzAngle%i", s), "Dxdz angle", 100, -10, 10);
+  H_track_dydzAngle_[s] = fs->make<TH1F>( Form("H_track_dydzAngle%i", s) , "Dydz angle", 100, -10, 10);
   H_digi_charge1D_[s] = fs->make<TH1F>( Form("H_digi_charge1D%i", s), "Digi charge 1D", 200, 0, 200);
   
   
@@ -159,41 +167,49 @@ void BrickedTBValidation::dqmBeginRun(const edm::Run& iRun, const edm::EventSetu
   H_dy1D_[s] = fs->make<TH1F>( Form("H_dy1D%i", s), "Residuals y", 200, -50, 50);	
 
 
-  H_eff_cell_[s][0] = fs->make<TProfile2D>( Form("H_eff_cell0%i", s), "Efficiency whole detector",100, -10000, 10000, 100, -10000, 10000);
-  H_eff_cell_[s][1] = fs->make<TProfile2D>( Form("H_eff_cell1%i", s), "Efficiency cell 1",100, 0, 100, 100, 0, 150);
-  H_eff_cell_[s][2] = fs->make<TProfile2D>( Form("H_eff_cell2%i", s), "Efficiency cell 2",100, 0, 100, 100, 0, 250);
+  H_eff_cell_[s][0] = fs->make<TProfile2D>( Form("H_eff_cell0%i", s), "Efficiency whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_eff_cell_[s][1] = fs->make<TProfile2D>( Form("H_eff_cell1%i", s), "Efficiency cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_eff_cell_[s][2] = fs->make<TProfile2D>( Form("H_eff_cell2%i", s), "Efficiency cell 2",Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
   
-  H_pshpos_cell_[s][0] = fs->make<TH2F>( Form("H_pshpos_cell0%i", s),"Pos whole detector",100, -10000, 10000, 100, -10000, 10000);
-  H_pshpos_cell_[s][1] = fs->make<TH2F>( Form("H_pshpos_cell1%i", s), "Pos cell 1",100, 0, 100, 100, 0, 150);
-  H_pshpos_cell_[s][2] = fs->make<TH2F>( Form("H_pshpos_cell2%i", s), "Pos cell 2",100, 0, 100, 100, 0, 250);
+  H_pshpos_cell_[s][0] = fs->make<TH2F>( Form("H_pshpos_cell0%i", s),"Pos whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_pshpos_cell_[s][1] = fs->make<TH2F>( Form("H_pshpos_cell1%i", s), "Pos cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_pshpos_cell_[s][2] = fs->make<TH2F>( Form("H_pshpos_cell2%i", s), "Pos cell 2", Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
 
-  H_position_cell_[s][0] = fs->make<TH2F>( Form("H_position_cell0%i", s),"Pos whole detector",100, -10000, 10000, 100, -10000, 10000);
-  H_position_cell_[s][1] = fs->make<TH2F>( Form("H_position_cell1%i", s), "Pos cell 1",100, 0, 100, 100, 0, 150);
-  H_position_cell_[s][2] = fs->make<TH2F>( Form("H_position_cell2%i", s), "Pos cell 2",100, 0, 100, 100, 0, 250);
+  H_position_cell_[s][0] = fs->make<TH2F>( Form("H_position_cell0%i", s),"Pos whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_position_cell_[s][1] = fs->make<TH2F>( Form("H_position_cell1%i", s), "Pos cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_position_cell_[s][2] = fs->make<TH2F>( Form("H_position_cell2%i", s), "Pos cell 2", Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
 
-  H_dx_cell_[s][0] = fs->make<TProfile2D>( Form("H_dx_cell0%i", s), "Dx whole detector", 100, -10000, 10000, 100, -10000, 10000);
-  H_dx_cell_[s][1] = fs->make<TProfile2D>( Form("H_dx_cell1%i", s), "Dx cell 1",100, 0, 100, 100, 0, 150);
-  H_dx_cell_[s][2] = fs->make<TProfile2D>( Form("H_dx_cell2%i", s), "Dx cell 2",100, 0, 100, 200, 0, 200);
+  H_dx_cell_[s][0] = fs->make<TProfile2D>( Form("H_dx_cell0%i", s), "Dx whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_dx_cell_[s][1] = fs->make<TProfile2D>( Form("H_dx_cell1%i", s), "Dx cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_dx_cell_[s][2] = fs->make<TProfile2D>( Form("H_dx_cell2%i", s), "Dx cell 2",Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
             
-  H_dyvsy_cell_[s][0] = fs->make<TProfile>( Form("H_dyvsy_cell0%i", s), "Dyvsy whole detector", 100, -10000, 10000);
-  H_dyvsy_cell_[s][1] = fs->make<TProfile>( Form("H_dyvsy_cell1%i", s), "Dyvsy cell 1",50, 0, 100);
-  H_dyvsy_cell_[s][2] = fs->make<TProfile>( Form("H_dyvsy_cell2%i", s), "Dyvsy cell 2",100, 0 , 200);
+  H_dyvsy_cell_[s][0] = fs->make<TProfile>( Form("H_dyvsy_cell0%i", s), "Dyvsy whole detector", 4*Nxbins_cell0 ,0, 4*Nxbins_cell0);
+  H_dyvsy_cell_[s][1] = fs->make<TProfile>( Form("H_dyvsy_cell1%i", s), "Dyvsy cell 1",4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_dyvsy_cell_[s][2] = fs->make<TProfile>( Form("H_dyvsy_cell2%i", s), "Dyvsy cell 2", 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
   
-  H_dxvsx_cell_[s][0] = fs->make<TProfile>( Form("H_dxvsx_cell0%i", s), "Dxvsx whole detector", 100, -10000, 10000);
-  H_dxvsx_cell_[s][1] = fs->make<TProfile>( Form("H_dxvsx_cell1%i", s), "Dxvsx cell 1",25, 0, 25);
-  H_dxvsx_cell_[s][2] = fs->make<TProfile>( Form("H_dxvsx_cell2%i", s), "Dxvsx cell 2",50,0 , 50);
+  H_dxvsx_cell_[s][0] = fs->make<TProfile>( Form("H_dxvsx_cell0%i", s), "Dxvsx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
+  H_dxvsx_cell_[s][1] = fs->make<TProfile>( Form("H_dxvsx_cell1%i", s), "Dxvsx cell 1", Nxbins_cell1, 0, Nxbins_cell1);
+  H_dxvsx_cell_[s][2] = fs->make<TProfile>( Form("H_dxvsx_cell2%i", s), "Dxvsx cell 2", Nxbins_cell2, 0, Nxbins_cell2);
   
-  H_dy_cell_[s][0] = fs->make<TProfile2D>( Form("H_dy_cell0%i", s), "Dy whole detector", 100, -10000, 10000, 100, -10000, 10000);
-  H_dy_cell_[s][1] = fs->make<TProfile2D>( Form("H_dy_cell1%i", s), "Dy cell 1",30, 0, 30, 100, 0, 100);
-  H_dy_cell_[s][2] = fs->make<TProfile2D>( Form("H_dy_cell2%i", s), "Dy cell 2",60, 0, 60, 200, 0, 200);
+  H_dy_cell_[s][0] = fs->make<TProfile2D>( Form("H_dy_cell0%i", s), "Dy whole detector", Nxbins_cell0, 0, Nxbins_cell0, 4*Nxbins_cell0, 0, 4*Nxbins_cell0);
+  H_dy_cell_[s][1] = fs->make<TProfile2D>( Form("H_dy_cell1%i", s), "Dy cell 1", Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_dy_cell_[s][2] = fs->make<TProfile2D>( Form("H_dy_cell2%i", s), "Dy cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
 
-  H_charge_cell_[s][0] = fs->make<TProfile2D>( Form("H_q_cell0%i", s), "Q whole detector", 100, -10000, 10000, 100, -10000, 10000);
-  H_charge_cell_[s][1] = fs->make<TProfile2D>( Form("H_q_cell1%i", s), "Q cell 1",100, 0, 100, 100, 0, 150);
-  H_charge_cell_[s][2] = fs->make<TProfile2D>( Form("H_q_cell2%i", s), "Q cell 2",100, 0, 100, 100, 0, 250);
+  H_charge_cell_[s][0] = fs->make<TProfile2D>( Form("H_q_cell0%i", s), "Q whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_charge_cell_[s][1] = fs->make<TProfile2D>( Form("H_q_cell1%i", s), "Q cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_charge_cell_[s][2] = fs->make<TProfile2D>( Form("H_q_cell2%i", s), "Q cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
 
-  H_clsize_cell_[s][0] = fs->make<TProfile2D>( Form("H_cls_cell0%i", s), "ClS whole detector", 100, -10000, 10000, 100, -10000, 10000);
-  H_clsize_cell_[s][1] = fs->make<TProfile2D>( Form("H_cls_cell1%i", s), "ClS cell 1",100, 0, 100, 100, 0, 150);
-  H_clsize_cell_[s][2] = fs->make<TProfile2D>( Form("H_cls_cell2%i", s), "ClS cell 2",100, 0, 100, 100, 0, 250);}
+  H_clsize_cell_[s][0] = fs->make<TProfile2D>( Form("H_cls_cell0%i", s), "ClS whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_clsize_cell_[s][1] = fs->make<TProfile2D>( Form("H_cls_cell1%i", s), "ClS cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_clsize_cell_[s][2] = fs->make<TProfile2D>( Form("H_cls_cell2%i", s), "ClS cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
+
+  H_clsize_dx_[s][0] = fs->make<TProfile>( Form("H_cls_dx_cell0%i", s), "ClS dx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
+  H_clsize_dx_[s][1] = fs->make<TProfile>( Form("H_cls_dx_cell1%i", s), "ClS dx cell 1",Nxbins_cell1, 0, Nxbins_cell1);
+  H_clsize_dx_[s][2] = fs->make<TProfile>( Form("H_cls_dx_cell2%i", s), "ClS dx cell 2",  Nxbins_cell2, 0, Nxbins_cell2);
+
+  H_clsize_dy_[s][0] = fs->make<TProfile>( Form("H_cls_dy_cell0%i", s), "ClS dx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
+  H_clsize_dy_[s][1] = fs->make<TProfile>( Form("H_cls_dy_cell1%i", s), "ClS dx cell 1",4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_clsize_dy_[s][2] = fs->make<TProfile>( Form("H_cls_dy_cell2%i", s), "ClS dx cell 2",  4*Nxbins_cell2, 0, 4*Nxbins_cell2);}
 }
 //
 // -- Analyze
@@ -329,10 +345,10 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
         vME_track_dydzAngle_[me_unit]->Fill(ps->phiAtEntry());
 
 
-        H_track_XYMap_[me_unit]->Fill(tk_ep_gbl.x(), tk_ep_gbl.y());
-        H_track_RZMap_[me_unit]->Fill(tk_ep_gbl.z(), std::hypot(tk_ep_gbl.x(), tk_ep_gbl.y()));
-        //H_track_dxdzAngle_[me_unit]->Fill(ps->thetaAtEntry());
-        //H_track_dydzAngle_[me_unit]->Fill(ps->phiAtEntry());
+        H_track_XYMap_->Fill(tk_ep_gbl.x(), tk_ep_gbl.y());
+        H_track_RZMap_->Fill(tk_ep_gbl.z(), std::hypot(tk_ep_gbl.x(), tk_ep_gbl.y()));
+        H_track_dxdzAngle_[me_unit]->Fill(ps->thetaAtEntry());
+        H_track_dydzAngle_[me_unit]->Fill(ps->phiAtEntry());
 
 
 
@@ -363,7 +379,7 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
           //if( ! channel_iluminated_by_(psh_pos,ch,2.0) )
           // XXX FIXME: CHANGE the loop in order to use get_illuminated_pixels_ XXX
           if (!channel_iluminated_by_(*ps, ch, tkDetUnit)) {
-            continue;
+		continue;
           }
           const PixelDigi& current_digi = get_digi_from_channel_(ch, it_digis);
           used_channel.insert(ch);
@@ -493,6 +509,8 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
             H_clsize_cell_[me_unit][i]->Fill(
                 icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, cluster_size);
 
+            H_clsize_dx_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, cluster_size);
+            H_clsize_dy_[me_unit][i]->Fill(icell_psh.second * 1.0_inv_um, cluster_size);
           }
         }
       }
@@ -823,8 +841,12 @@ bool BrickedTBValidation::channel_iluminated_by_(const PSimHit& ps,
                                                      const PixelGeomDetUnit* tkDetUnit) {
   // Get the list of pixels illuminated by the PSimHit
   const auto pixel_list = get_illuminated_pixels_(ps, tkDetUnit);
+  //Bricked
+
   // Get the digi position
   const auto pos_channel(PixelDigi::channelToPixel(channel));
+
+  //Bricked
 
   for (const auto& px_py : pixel_list) {
     if (px_py.first == pos_channel.first && px_py.second == pos_channel.second) {
@@ -863,8 +885,13 @@ std::set<std::pair<int, int>> BrickedTBValidation::get_illuminated_pixels_(const
 
   std::set<std::pair<int, int>> illuminated_pixels;
   for (unsigned int px = std::floor(min_pos.x()); px <= std::round(max_pos.x()); ++px) {
-    for (unsigned int py = std::floor(min_pos.y()); py <= std::round(max_pos.y()); ++py) {
-      //std::cout << " [" << px << "," << py << "]";
+    
+     //for (unsigned int py = std::floor(min_pos.y()); py <= std::round(max_pos.y()); ++py) {
+     //Bricked adaptation to gather all pixels (conservative)
+    for (unsigned int py = std::max(float(0), std::floor(min_pos.y()) -1) ; py <= std::round(max_pos.y()); ++py) {
+     
+
+	 //std::cout << " [" << px << "," << py << "]";
       illuminated_pixels.insert(std::pair<int, int>(px, py));
     }
   }

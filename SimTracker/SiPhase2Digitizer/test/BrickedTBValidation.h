@@ -175,7 +175,9 @@ private:
 
   // The tracks entry angle to accept (if any)
 
-  int Nxbins_;
+  int Nxbins_cell0;
+  int Nxbins_cell1;
+  int Nxbins_cell2;
   std::vector<double> tracksEntryAngleX_;
   std::vector<double> tracksEntryAngleY_;
   // The actual angles already parsed (0- x aix, 1- y axis)
@@ -196,8 +198,10 @@ private:
   TH1F *hdetunit;
   TH1F *hangle;
   TH1I *H_ME_Unit; 
-  TH2F *H_track_XYMap_[100];
-  TH2F *H_track_RZMap_[100];
+  TH2F *H_track_XYMap_;
+  TH2F *H_track_RZMap_;
+  TH1F *H_track_dxdzAngle_[100];
+  TH1F *H_track_dydzAngle_[100];
   TH1F *H_digi_charge1D_[100];
   TH2F *H_digi_XYMap_;
   TH2F *H_digi_RZMap_;
@@ -237,6 +241,9 @@ private:
   TProfile2D *H_charge_cell_[100][3];
             // Cluster size
   TProfile2D *H_clsize_cell_[100][3];
+  
+  TProfile *H_clsize_dx_[100][3];
+  TProfile *H_clsize_dy_[100][3];
 };
 #endif
 

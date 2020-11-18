@@ -9,8 +9,12 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("RecHitTest")
 
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.load("Configuration.Geometry.GeometryIdeal_cff")
-process.load("Configuration.StandardSequences.MagneticField_38T_cff")
+
+#process.load("Configuration.Geometry.GeometryIdeal_cff")
+#process.load("Configuration.StandardSequences.MagneticField_38T_cff")
+
+process.load('Configuration.Geometry.GeometryExtended2026D57Reco_cff')  
+process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.load("Configuration.StandardSequences.Services_cff")
 
@@ -31,7 +35,7 @@ process.load('Configuration.EventContent.EventContent_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1)
+    input = cms.untracked.int32(10)
 )
 
 process.MessageLogger = cms.Service("MessageLogger",
@@ -50,8 +54,10 @@ process.MessageLogger = cms.Service("MessageLogger",
 # get the files from DBS:
 process.source = cms.Source("PoolSource",
   fileNames = cms.untracked.vstring(
+     'file:Digis_1000.root'
+
 #    'file:/afs/cern.ch/work/d/dkotlins/public/MC/mu/pt100/clus/clus1.root'
-    'file:/afs/cern.ch/work/d/dkotlins/public/MC/mu/pt100_71_pre7/rechits/rechits2_mc71.root'
+    #'file:/afs/cern.ch/work/d/dkotlins/public/MC/mu/pt100_71_pre7/rechits/rechits2_mc71.root'
 #    '/store/relval/CMSSW_7_1_0_pre7/RelValProdMinBias/GEN-SIM-RECO/PRE_STA71_V3-v1/00000/9E55469D-B2D1-E311-BEA8-02163E00B4B7.root'
 
 #"/store/data/Run2012D/MinimumBias/RECO/PromptReco-v1/000/208/686/F60495B3-1E41-E211-BB7C-003048D3756A.root",
@@ -83,14 +89,14 @@ process.source = cms.Source("PoolSource",
 
 # a service to use root histos
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('histo.root')
+    fileName = cms.string('histo_rh.root')
 )
 
 # Choose the global tag here:
 #process.GlobalTag.globaltag = "MC_70_V1::All"
 #process.GlobalTag.globaltag = "START70_V1::All"
 #process.GlobalTag.globaltag = "POSTLS170_V5::All"
-process.GlobalTag.globaltag = "START71_V1::All"
+#process.GlobalTag.globaltag = "START71_V1::All"
 #process.GlobalTag.globaltag = "MC_71_V1::All"
 #process.GlobalTag.globaltag = "POSTLS171_V1::All"
 #process.GlobalTag.globaltag = "PRE_MC_71_V2::All"
@@ -99,6 +105,7 @@ process.GlobalTag.globaltag = "START71_V1::All"
 
 # DB stuff 
 # GenError
+"""
 useLocalDB = True
 if useLocalDB :
     process.DBReaderFrontier = cms.ESSource("PoolDBESSource",
@@ -141,7 +148,7 @@ if useLocalDB2 :
  
 process.myprefer = cms.ESPrefer("PoolDBESSource","DBReaderFrontier")
 #process.myprefer2 = cms.ESPrefer("PoolDBESSource","DBReaderFrontier2")
-
+"""
 
 #process.PoolDBESSource = cms.ESSource("PoolDBESSource",
 #    BlobStreamerName = cms.untracked.string('TBufferBlobStreamingService'),
@@ -178,10 +185,10 @@ process.o1 = cms.OutputModule("PoolOutputModule",
 # DIRECT
 # direct clusterization (no raw step)
 # label of digis 
-process.siPixelClusters.src = 'simSiPixelDigis'
+process.siPixelClusters.src = cms.InputTag("simSiPixelDigis")
 
 # read rechits
-process.analysis = cms.EDAnalyzer("ReadPixelRecHit",
+process.analysis = cms.EDAnalyzer("ReadBrickedRecHit",
     Verbosity = cms.untracked.bool(False),
     src = cms.InputTag("siPixelRecHits"),
 )

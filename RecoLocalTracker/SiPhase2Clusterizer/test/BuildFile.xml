@@ -18,6 +18,6 @@
 <library   file="ClustersValidation.cc" name="Phase2TrackerClusterizerValidation">
   <flags   EDM_PLUGIN="1"/>
 </library>
-<library   file="ClustersValidation.cc" name="BrickedClust">
+<library   file="BrickedClust.cc" name="BrickedClust">
   <flags   EDM_PLUGIN="1"/>
 </library>

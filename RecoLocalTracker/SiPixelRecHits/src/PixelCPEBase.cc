@@ -121,6 +121,7 @@ void PixelCPEBase::fillDetParams() {
   // MM: this code finds the last Pixel (Inner Tracker) DetUnit to loop upon when filling the det params, by looking the first detId which is from
   // the Outer Tracker (Strips in case of the Phase-0/1 detector).
 
+
   auto const& dus = geom_.detUnits();
   unsigned m_detectors = dus.size();
   for (unsigned int i = 1; i < 7; ++i) {
@@ -170,7 +171,8 @@ void PixelCPEBase::fillDetParams() {
       if (LoadTemplatesFromDB_)  // do only if genError requested
         p.detTemplateId = genErrorDBObject_->getGenErrorID(p.theDet->geographicalId().rawId());
     } else {  // for templates
-      p.detTemplateId = templateDBobject_->getTemplateID(p.theDet->geographicalId());
+      
+        p.detTemplateId = templateDBobject_->getTemplateID(p.theDet->geographicalId());
     }
 
     auto topol = &(p.theDet->specificTopology());
@@ -251,7 +253,7 @@ void PixelCPEBase::setTheClu(DetParam const& theDetParam, ClusterParam& theClust
 //-----------------------------------------------------------------------------
 //  Compute alpha_ and beta_ from the LocalTrajectoryParameters.
 //  Note: should become const after both localParameters() become const.
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void PixelCPEBase::computeAnglesFromTrajectory(DetParam const& theDetParam,
                                                ClusterParam& theClusterParam,
                                                const LocalTrajectoryParameters& ltp) const {
@@ -463,7 +465,7 @@ SiPixelRecHitQuality::QualWordType PixelCPEBase::rawQualityWord(ClusterParam& th
 }
 
 void PixelCPEBase::fillPSetDescription(edm::ParameterSetDescription& desc) {
-  desc.add<bool>("LoadTemplatesFromDB", true);
+  desc.add<bool>("LoadTemplatesFromDB", true); 
   desc.add<bool>("Alpha2Order", true);
   desc.add<int>("ClusterProbComputationFlag", 0);
   desc.add<bool>("useLAWidthFromDB", true);

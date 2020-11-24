@@ -118,6 +118,7 @@ namespace cms {
         LocalPoint lp(std::get<0>(tuple));
         LocalError le(std::get<1>(tuple));
         SiPixelRecHitQuality::QualWordType rqw(std::get<2>(tuple));
+        //SiPixelRecHitQuality::QualWordType rqw(0);
         // Create a persistent edm::Ref to the cluster
         edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
             edmNew::makeRefTo(inputhandle, clustIt);

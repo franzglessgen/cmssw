@@ -252,8 +252,8 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   int Q_l_X;  //!< Q of the last   pixel  in X
   int Q_f_Y;  //!< Q of the first  pixel  in Y
   int Q_l_Y;  //!< Q of the last   pixel  in Y
-  int Q_f_b;
-  int Q_l_b;
+  int Q_f_b;  //Q first bricked: charge of the dented row at the bootom of a cluster
+  int Q_l_b;  // Same but at the top of the cluster 
   int lowest_is_bricked = 1;
   int highest_is_bricked = 0; 
   //theDetParam.theTopol->isBricked();
@@ -302,7 +302,7 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   }
 
 #ifdef EDM_ML_DEBUG
-  if (theVerboseLevel > 20) {
+  if (theVerboseLevel > 0) {
     cout << "\n\t >>> theClusterParam.theCluster->x = " << theClusterParam.theCluster->x()
          << "\n\t >>> theClusterParam.theCluster->y = " << theClusterParam.theCluster->y()
          << "\n\t >>> cluster: minRow = " << theClusterParam.theCluster->minPixelRow()
@@ -321,7 +321,7 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   //--- Position, including the half lorentz shift
 
 #ifdef EDM_ML_DEBUG
-  if (theVerboseLevel > 20)
+  if (theVerboseLevel > 0)
     cout << "\t >>> Generic:: processing X" << endl;
 #endif
 
@@ -344,8 +344,10 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   // apply the lorentz offset correction
   xPos = xPos + shiftX;
 
+  std::cout<<xPos<<" xpos"<<std::endl;
+
 #ifdef EDM_ML_DEBUG
-  if (theVerboseLevel > 20)
+  if (theVerboseLevel > 0)
     cout << "\t >>> Generic:: processing Y" << endl;
 #endif
 
@@ -387,6 +389,8 @@ else yPos = SiPixelUtils::generic_position_formula(
 
   // apply the lorentz offset correction
   yPos = yPos + shiftY;
+  
+  std::cout<<yPos<<" ypos"<<std::endl;
 
   // Apply irradiation corrections
   if (IrradiationBiasCorrection_) {
@@ -541,11 +545,13 @@ void PixelCPEGeneric::collect_edge_charges_bricked(ClusterParam& theClusterParam
   // Iterate over the pixels.
   int isize = theClusterParam.theCluster->size();
   for (int i = 0; i != isize; ++i) {
+    std::cout<<i<<"clust i"<<std::endl;
     auto const& pixel = theClusterParam.theCluster->pixel(i);
     // ggiurgiu@fnal.gov: add pixel charge truncation
     int pix_adc = pixel.adc;
     if (UseErrorsFromTemplates_ && TruncatePixelCharge_)
       pix_adc = std::min(pix_adc, theClusterParam.pixmx);
+    std::cout<<pix_adc<<"adc i"<<std::endl;
 
     //
     // X projection
@@ -580,6 +586,8 @@ void PixelCPEGeneric::collect_edge_charges_bricked(ClusterParam& theClusterParam
  	
   if (highest_is_bricked) Q_l_b = -Q_t_b;
   else Q_l_b = -Q_t_nb;
+
+  std::cout<<Q_l_b<<" "<<Q_f_b<<" "<<Q_f_X<<" "<<Q_l_X<<" "<<Q_f_Y<<" "<<Q_l_Y<<" Qlb"<<std::endl;
 
   return;
 }

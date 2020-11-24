@@ -40,6 +40,7 @@
 #include <TH1F.h>
 #include <THStack.h>
 
+using Phase2TrackerGeomDetUnit = PixelGeomDetUnit;
 struct ClusterHistos {
   // use TH1D instead of TH1F to avoid stauration at 2^31
   // above this increments with +1 don't work for float, need double
@@ -194,6 +195,7 @@ void Phase2TrackerClusterizerValidation::analyze(const edm::Event& event, const 
 
     // Get the geomdet
     const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+    const Phase2TrackerGeomDetUnit* tkDetUnit = dynamic_cast<const Phase2TrackerGeomDetUnit*>(geomDetUnit); 
     if (!geomDetUnit)
       continue;
 
@@ -214,6 +216,11 @@ void Phase2TrackerClusterizerValidation::analyze(const edm::Event& event, const 
     for (edmNew::DetSet<Phase2TrackerCluster1D>::const_iterator clustIt = DSViter->begin(); clustIt != DSViter->end();
          ++clustIt) {
       // determine the position
+
+      //float column_pos = clustIt->column() + 0.5;
+      //if (tkDetUnit->specificTopology().isBricked() && (int(clustIt->center())%2)) column_pos+=0.5;
+
+      //MeasurementPoint mpClu(clustIt->center(), column_pos);
       MeasurementPoint mpClu(clustIt->center(), clustIt->column() + 0.5);
       Local3DPoint localPosClu = geomDetUnit->topology().localPosition(mpClu);
       Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);

@@ -8,8 +8,10 @@ process = cms.Process('cluTest')
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 #process.load('Configuration.EventContent.EventContent_cff')
-process.load('Configuration.Geometry.GeometryExtended2023D17Reco_cff')
-process.load('Configuration.StandardSequences.MagneticField_38T_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D57Reco_cff') 
+process.load('Configuration.StandardSequences.MagneticField_cff')
+#process.load('Configuration.Geometry.GeometryExtended2023D17Reco_cff')
+#process.load('Configuration.StandardSequences.MagneticField_38T_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 from Configuration.AlCa.GlobalTag import GlobalTag
@@ -23,7 +25,7 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input file
 process.source = cms.Source('PoolSource',
-    fileNames = cms.untracked.vstring('file:step3.root')
+    fileNames = cms.untracked.vstring('file:RecoHits_10000.root')
 )
 
 # Output
@@ -48,7 +50,7 @@ process.analysis = cms.EDAnalyzer('Phase2TrackerClusterizerValidation',
     simhitsendcap = cms.InputTag("g4SimHits", "TrackerHitsPixelEndcapLowTof"),
     simtracks = cms.InputTag("g4SimHits"),
     ECasRings = cms.bool(True),
-    SimTrackMinPt = cms.double(2.)
+    SimTrackMinPt = cms.double(0.)
 )
 
 # Processes to run

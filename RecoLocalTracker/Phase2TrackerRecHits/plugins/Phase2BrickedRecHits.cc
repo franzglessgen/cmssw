@@ -1,3 +1,4 @@
+
 #include "FWCore/Framework/interface/global/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
@@ -27,10 +28,10 @@
 #include <vector>
 #include <string>
 
-class Phase2TrackerRecHits : public edm::global::EDProducer<> {
+class Phase2BrickedRecHits : public edm::global::EDProducer<> {
 public:
-  explicit Phase2TrackerRecHits(const edm::ParameterSet& conf);
-  ~Phase2TrackerRecHits() override{};
+  explicit Phase2BrickedRecHits(const edm::ParameterSet& conf);
+  ~Phase2BrickedRecHits() override{};
   void produce(edm::StreamID sid, edm::Event& event, const edm::EventSetup& eventSetup) const final;
 
 private:
@@ -39,13 +40,13 @@ private:
   edm::ESInputTag cpeTag_;
 };
 
-Phase2TrackerRecHits::Phase2TrackerRecHits(edm::ParameterSet const& conf)
+Phase2BrickedRecHits::Phase2BrickedRecHits(edm::ParameterSet const& conf)
     : token_(consumes<Phase2TrackerCluster1DCollectionNew>(conf.getParameter<edm::InputTag>("src"))),
       cpeTag_(conf.getParameter<edm::ESInputTag>("Phase2StripCPE")) {
   produces<Phase2TrackerRecHit1DCollectionNew>();
 }
 
-void Phase2TrackerRecHits::produce(edm::StreamID sid, edm::Event& event, const edm::EventSetup& eventSetup) const {
+void Phase2BrickedRecHits::produce(edm::StreamID sid, edm::Event& event, const edm::EventSetup& eventSetup) const {
   // Get the Clusters
   edm::Handle<Phase2TrackerCluster1DCollectionNew> clusters;
   event.getByToken(token_, clusters);
@@ -91,4 +92,4 @@ void Phase2TrackerRecHits::produce(edm::StreamID sid, edm::Event& event, const e
   event.put(std::move(outputRecHits));
 }
 
-DEFINE_FWK_MODULE(Phase2TrackerRecHits);
+DEFINE_FWK_MODULE(Phase2BrickedRecHits);

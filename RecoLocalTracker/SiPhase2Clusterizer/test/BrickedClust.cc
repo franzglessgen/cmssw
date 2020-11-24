@@ -285,7 +285,6 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       histogramLayer = createLayerHistograms(layer);
 
 
-     std::cout << layer << " " << 3 << std::endl;
 
     // Loop over the clusters in the detector unit
     //for (edmNew::DetSet<Phase2TrackerCluster1D>::const_iterator clustIt = DSViter->begin(); clustIt != DSViter->end();
@@ -301,6 +300,8 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 
 
       const auto pitch = tkDetUnit->specificTopology().pitch();
+      std::cout<<pitch.first<<" "<<pitch.second<<std::endl;
+
  
       double cluster_tot = 0;
       std::pair<double, double> cluster_position({0.0, 0.0});
@@ -340,11 +341,12 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       MeasurementPoint mpClu(cluster_position.first, cluster_position.second);
       //Local3DPoint localPosClu = geomDetUnit->topology().localPosition(mpClu);
       //LocalPoint localPosClu = tkDetUnit->specificTopology().localPosition(mpClu);
-      Local3DPoint localPosClu = tkDetUnit->specificTopology().localPosition(mpClu);
+      LocalPoint localPosClu = tkDetUnit->specificTopology().localPosition(mpClu);
      
       unsigned int s = 2; 
       const std::pair<double, double> icell_psh = pixel_cell_transformation_(mpClu, s, pitch);
-      histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
+      //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
+      histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
       std::cout<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
 
       histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
@@ -540,11 +542,11 @@ std::map<unsigned int, ClusterHistos>::iterator BrickedClust::createLayerHistogr
 
   histoName.str("");
   histoName << "Cluster_Charge_Barrel" << tag.c_str() << id;
-  local_histos.clusterCharge[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 100, 0 , 1000);
+  local_histos.clusterCharge[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 30000);
   
   histoName.str("");
   histoName << "Cluster_Charge_Forward" << tag.c_str() << id;
-  local_histos.clusterCharge[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 100, 0 , 1000);
+  local_histos.clusterCharge[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 30000);
 
 
   histoName.str("");

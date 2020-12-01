@@ -108,9 +108,11 @@ namespace SiPixelUtils {
     //--- The case of only one pixel in this projection is separate.  Note that
     //--- here first_pix == last_pix, so the average of the two is still the
     //--- center of the pixel.
-    if (size == 1) {
-      return geom_center;
-    }
+    
+    //Make use of the bricked geometry
+    //if (size == 1) {
+      //return geom_center;
+    //}
 
     //--- Width of the clusters minus the edge (first and last) pixels.
     //--- In the note, they are denoted x_F and x_L (and y_F and y_L)

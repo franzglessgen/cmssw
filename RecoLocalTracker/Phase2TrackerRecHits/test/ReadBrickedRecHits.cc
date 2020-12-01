@@ -44,6 +44,8 @@
 
 #include <TH2F.h>
 #include <TH1F.h>
+#include <TProfile.h>
+#include <TProfile2D.h>
 
 using Phase2TrackerGeomDetUnit = PixelGeomDetUnit;
 
@@ -53,6 +55,16 @@ struct RecHitHistos {
 
   TH1D* numberRecHits[3];
   TH1D* clusterSize[3];
+  TH1D* clusterCharge[3];
+  TH1D* clusterSizeX[3];
+  TH1D* clusterSizeY[3];
+  TProfile2D* clusterSize2D[3];
+  TProfile* clusterSizeXvsX[3];
+  TProfile* clusterSizeYvsY[3];
+  TProfile* clusterDXvsX[3];
+  TProfile* clusterDYvsY[3];
+  TH1I* clusterCol[3];
+  TH1I* clusterRow[3];
 
   TH2F* globalPosXY[3][5];
   TH2F* localPosXY[3][5];
@@ -320,6 +332,14 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       LocalPoint localPosClu = rechitIt->localPosition();
       Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
 
+      const auto pitch = tkDetUnit->specificTopology().pitch();
+
+      MeasurementPoint mpClu = tkDetUnit->specificTopology().measurementPosition(localPosClu);
+
+      unsigned int s = 2; 
+      const std::pair<double, double> icell_psh = pixel_cell_transformation_(mpClu, s, pitch);
+      
+      
       // restrict eta range
       float eta = globalPosClu.eta();
       if (fabs(eta) < mineta_ || fabs(eta) > maxeta_)
@@ -329,6 +349,15 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       //const Phase2TrackerCluster1D* clustIt = &*rechitIt->cluster();
       edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> const& clustIt = rechitIt->cluster();
       const std::vector<SiPixelCluster::Pixel> &pixelsVec = clustIt->pixels();
+      histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
+
+      histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
+      histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
+
+      histogramLayer->second.clusterSizeX[det]->Fill(clustIt->sizeX());
+      histogramLayer->second.clusterSizeY[det]->Fill(clustIt->sizeY());
+
+
       // Get all the simTracks that form the cluster
       std::vector<unsigned int> clusterSimTrackIds;
       for (unsigned int i(0); i < (unsigned int)clustIt->size(); ++i) {
@@ -336,6 +365,10 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
         //unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->minPixelRow() + i, clustIt->y()));
 		int chax = int(pixelsVec[i].x);  // index as float=iteger, row index, 0-159
         	int chay = int(pixelsVec[i].y);  // same, col index, 0-415
+        	double adc = pixelsVec[i].adc;
+		histogramLayer->second.clusterCharge[det]->Fill(adc);
+		histogramLayer->second.clusterCol[det]->Fill(chax);
+		histogramLayer->second.clusterRow[det]->Fill(chay);
                   
 
 		unsigned int channel(PixelDigi::pixelToChannel(chax, chay));
@@ -431,6 +464,11 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
 
       // now get the position of the closest hit
       Local3DPoint localPosHit(simhit->localPosition());
+      
+
+
+      histogramLayer->second.clusterDXvsX[det]->Fill(icell_psh.first, (localPosClu.x() - localPosHit.x()));
+      histogramLayer->second.clusterDYvsY[det]->Fill(icell_psh.second, (localPosClu.y() - localPosHit.y()));
 
       // and fill bias and pull histograms
       histogramLayer->second.deltaX[det][0]->Fill(localPosClu.x() - localPosHit.x());
@@ -557,15 +595,97 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
 
   std::ostringstream histoName;
 
+  //Homemade
+
+  histoName.str("");
+  histoName << "Cluster_Charge_Barrel" << tag.c_str() << id;
+  local_histos.clusterCharge[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 30000);
+  
+  histoName.str("");
+  histoName << "Cluster_Charge_Forward" << tag.c_str() << id;
+  local_histos.clusterCharge[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 30000);
+
+
+  histoName.str("");
+  histoName << "Cluster_SizeX_Barrel" << tag.c_str() << id;
+  local_histos.clusterSizeX[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 20, 0, 20);
+
+  histoName.str("");
+  histoName << "Cluster_SizeX_Forward" << tag.c_str() << id;
+  local_histos.clusterSizeX[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 20, 0, 20);
+
+  
+  histoName.str("");
+  histoName << "Cluster_SizeY_Barrel" << tag.c_str() << id;
+  local_histos.clusterSizeY[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 20,0, 20);
+
+  histoName.str("");
+  histoName << "Cluster_SizeY_Forward" << tag.c_str() << id;
+  local_histos.clusterSizeY[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 20, 0, 20);
+  
+  histoName.str("");
+  histoName << "Cluster_SizeXvsX_Barrel" << tag.c_str() << id;
+  local_histos.clusterSizeXvsX[1] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 50, 0 , 50);
+
+  histoName.str("");
+  histoName << "Cluster_SizeXvsX_Forward" << tag.c_str() << id;
+  local_histos.clusterSizeXvsX[2] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 50, 0, 50);
+ 
+  histoName.str("");
+  histoName << "Cluster_SizeYvsY_Barrel" << tag.c_str() << id;
+  local_histos.clusterSizeYvsY[1] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 200, 0 , 200);
+  
+  histoName.str("");
+  histoName << "Cluster_SizeYvsY_Forward" << tag.c_str() << id;
+  local_histos.clusterSizeYvsY[2] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 200, 0 , 200);
+
+
+
+  histoName.str("");
+  histoName << "Cluster_DXvsX_Barrel" << tag.c_str() << id;
+  local_histos.clusterDXvsX[1] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 50, 0 , 50);
+  histoName.str("");
+  histoName << "Cluster_DXvsX_Forward" << tag.c_str() << id;
+  local_histos.clusterDXvsX[2] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 50, 0 , 50);
+
+
+  histoName.str("");
+  histoName << "Cluster_DYvsY_Barrel" << tag.c_str() << id;
+  local_histos.clusterDYvsY[1] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 200, 0 , 200);
+  histoName.str("");
+  histoName << "Cluster_DYvsY_Forward" << tag.c_str() << id;
+  local_histos.clusterDYvsY[2] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 200, 0 , 200);
+  
+
+  histoName.str("");
+  histoName << "Cluster_Size2D_Barrel" << tag.c_str() << id;
+  local_histos.clusterSize2D[1] = td.make<TProfile2D>(histoName.str().c_str(), histoName.str().c_str(), 50, 0 , 50, 200, 0 , 200);
+  histoName.str("");
+  histoName << "Cluster_Size2D_Forward" << tag.c_str() << id;
+  local_histos.clusterSize2D[2] = td.make<TProfile2D>(histoName.str().c_str(), histoName.str().c_str(), 50, 0 , 50, 200, 0 , 200);
+
+  histoName.str("");
+  histoName << "Cluster_Col_Barrel" << tag.c_str() << id;
+  local_histos.clusterCol[1] = td.make<TH1I>(histoName.str().c_str(), histoName.str().c_str(), 1500,0, 1500);
+  histoName.str("");
+  histoName << "Cluster_Col_Forward" << tag.c_str() << id;
+  local_histos.clusterCol[2] = td.make<TH1I>(histoName.str().c_str(), histoName.str().c_str(), 1500,0, 1500);
+  histoName.str("");
+  histoName << "Cluster_Row_Barrel" << tag.c_str() << id;
+  local_histos.clusterRow[1] = td.make<TH1I>(histoName.str().c_str(), histoName.str().c_str(), 1500,0, 1500);
+  histoName.str("");
+  histoName << "Cluster_Row_Forward" << tag.c_str() << id;
+  local_histos.clusterRow[2] = td.make<TH1I>(histoName.str().c_str(), histoName.str().c_str(), 1500,0, 1500);
+//End homemade
   /*
      * Number of rechits
      */
 
   histoName.str("");
-  histoName << "Number_RecHits_Pixel" << tag.c_str() << id;
+  histoName << "Number_RecHits_Barrel" << tag.c_str() << id;
   local_histos.numberRecHits[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 50, 0., 0.);
   histoName.str("");
-  histoName << "Number_RecHits_Strip" << tag.c_str() << id;
+  histoName << "Number_RecHits_Forward" << tag.c_str() << id;
   local_histos.numberRecHits[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 50, 0., 0.);
 
   /*
@@ -573,10 +693,10 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
      */
 
   histoName.str("");
-  histoName << "Cluster_Size_Pixel" << tag.c_str() << id;
+  histoName << "Cluster_Size_Barrel" << tag.c_str() << id;
   local_histos.clusterSize[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 21, -0.5, 20.5);
   histoName.str("");
-  histoName << "Cluster_Size_Strip" << tag.c_str() << id;
+  histoName << "Cluster_Size_Forward" << tag.c_str() << id;
   local_histos.clusterSize[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 21, -0.5, 20.5);
 
   /*
@@ -589,22 +709,22 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
       clsstr = "_ClS_" + std::to_string(cls);
 
     histoName.str("");
-    histoName << "Local_Position_XY_Pixel" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Local_Position_XY_Barrel" << tag.c_str() << id << clsstr.c_str();
     local_histos.localPosXY[1][cls] =
         td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 500, 0., 0., 500, 0., 0.);
 
     histoName.str("");
-    histoName << "Local_Position_XY_Strip" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Local_Position_XY_Forward" << tag.c_str() << id << clsstr.c_str();
     local_histos.localPosXY[2][cls] =
         td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 500, 0., 0., 500, 0., 0.);
 
     histoName.str("");
-    histoName << "Global_Position_XY_Pixel" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Global_Position_XY_Barrel" << tag.c_str() << id << clsstr.c_str();
     local_histos.globalPosXY[1][cls] =
         td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 500, -120., 120., 500, -120., 120.);
 
     histoName.str("");
-    histoName << "Global_Position_XY_Strip" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Global_Position_XY_Forward" << tag.c_str() << id << clsstr.c_str();
     local_histos.globalPosXY[2][cls] =
         td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 500, -120., 120., 500, -120., 120.);
 
@@ -613,39 +733,39 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
        */
 
     histoName.str("");
-    histoName << "Delta_X_Pixel" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Delta_X_Barrel" << tag.c_str() << id << clsstr.c_str();
     local_histos.deltaX[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
 
     histoName.str("");
-    histoName << "Delta_X_Strip" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Delta_X_Forward" << tag.c_str() << id << clsstr.c_str();
     local_histos.deltaX[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
 
     histoName.str("");
-    histoName << "Delta_Y_Pixel" << tag.c_str() << id << clsstr.c_str();
-    local_histos.deltaY[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.2, 0.2);
+    histoName << "Delta_Y_Barrel" << tag.c_str() << id << clsstr.c_str();
+    local_histos.deltaY[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
 
     histoName.str("");
-    histoName << "Delta_Y_Strip" << tag.c_str() << id << clsstr.c_str();
-    local_histos.deltaY[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3, 3);
+    histoName << "Delta_Y_Forward" << tag.c_str() << id << clsstr.c_str();
+    local_histos.deltaY[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
 
     if (makeEtaPlots_) {
       histoName.str("");
-      histoName << "Delta_X_vs_Eta_Pixel" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_X_vs_Eta_Barrel" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaX_eta[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
 
       histoName.str("");
-      histoName << "Delta_X_vs_Eta_Strip" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_X_vs_Eta_Forward" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaX_eta[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
 
       histoName.str("");
-      histoName << "Delta_Y_vs_Eta_Pixel" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_Y_vs_Eta_Barrel" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaY_eta[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.2, 0.2);
 
       histoName.str("");
-      histoName << "Delta_Y_vs_Eta_Strip" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_Y_vs_Eta_Forward" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaY_eta[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3, 3);
     }
@@ -655,39 +775,39 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
        */
 
     histoName.str("");
-    histoName << "Pull_X_Pixel" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_X_Barrel" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullX[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     histoName.str("");
-    histoName << "Pull_X_Strip" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_X_Forward" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullX[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     histoName.str("");
-    histoName << "Pull_Y_Pixel" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_Y_Barrel" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullY[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     histoName.str("");
-    histoName << "Pull_Y_Strip" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_Y_Forward" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullY[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     if (makeEtaPlots_) {
       histoName.str("");
-      histoName << "Pull_X_Eta_Pixel" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_X_Eta_Barrel" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullX_eta[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
 
       histoName.str("");
-      histoName << "Pull_X_Eta_Strip" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_X_Eta_Forward" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullX_eta[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
 
       histoName.str("");
-      histoName << "Pull_Y_Eta_Pixel" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_Y_Eta_Barrel" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullY_eta[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
 
       histoName.str("");
-      histoName << "Pull_Y_Eta_Strip" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_Y_Eta_Forward" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullY_eta[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
     }
@@ -697,39 +817,39 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
        */
 
     histoName.str("");
-    histoName << "Delta_X_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Delta_X_Barrel_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.deltaX_P[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
 
     histoName.str("");
-    histoName << "Delta_X_Strip_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Delta_X_Forward_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.deltaX_P[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
 
     histoName.str("");
-    histoName << "Delta_Y_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Delta_Y_Barrel_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.deltaY_P[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.2, 0.2);
 
     histoName.str("");
-    histoName << "Delta_Y_Strip_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Delta_Y_Forward_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.deltaY_P[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     if (makeEtaPlots_) {
       histoName.str("");
-      histoName << "Delta_X_vs_Eta_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_X_vs_Eta_Barrel_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaX_eta_P[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
 
       histoName.str("");
-      histoName << "Delta_X_vs_Eta_Strip_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_X_vs_Eta_Forward_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaX_eta_P[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
 
       histoName.str("");
-      histoName << "Delta_Y_vs_Eta_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_Y_vs_Eta_Barrel_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaY_eta_P[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.2, 0.2);
 
       histoName.str("");
-      histoName << "Delta_Y_vs_Eta_Strip_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Delta_Y_vs_Eta_Forward_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaY_eta_P[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3, 3);
     }
@@ -739,39 +859,39 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
        */
 
     histoName.str("");
-    histoName << "Pull_X_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_X_Barrel_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullX_P[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     histoName.str("");
-    histoName << "Pull_X_Strip_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_X_Forward_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullX_P[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     histoName.str("");
-    histoName << "Pull_Y_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_Y_Barrel_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullY_P[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     histoName.str("");
-    histoName << "Pull_Y_Strip_P" << tag.c_str() << id << clsstr.c_str();
+    histoName << "Pull_Y_Forward_P" << tag.c_str() << id << clsstr.c_str();
     local_histos.pullY_P[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
 
     if (makeEtaPlots_) {
       histoName.str("");
-      histoName << "Pull_X_Eta_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_X_Eta_Barrel_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullX_eta_P[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
 
       histoName.str("");
-      histoName << "Pull_X_Eta_Strip_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_X_Eta_Forward_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullX_eta_P[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
 
       histoName.str("");
-      histoName << "Pull_Y_Eta_Pixel_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_Y_Eta_Barrel_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullY_eta_P[1][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
 
       histoName.str("");
-      histoName << "Pull_Y_Eta_Strip_P" << tag.c_str() << id << clsstr.c_str();
+      histoName << "Pull_Y_Eta_Forward_P" << tag.c_str() << id << clsstr.c_str();
       local_histos.pullY_eta_P[2][cls] =
           td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3., 3.);
     }
@@ -782,17 +902,17 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
      */
 
   histoName.str("");
-  histoName << "Primary_Digis_Pixel" << tag.c_str() << id;
+  histoName << "Primary_Digis_Barrel" << tag.c_str() << id;
   local_histos.primarySimHits[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 100, 0., 0.);
   histoName.str("");
-  histoName << "Primary_Digis_Strip" << tag.c_str() << id;
+  histoName << "Primary_Digis_Forward" << tag.c_str() << id;
   local_histos.primarySimHits[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 100, 0., 0.);
 
   histoName.str("");
-  histoName << "Other_Digis_Pixel" << tag.c_str() << id;
+  histoName << "Other_Digis_Barrel" << tag.c_str() << id;
   local_histos.otherSimHits[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 100, 0., 0.);
   histoName.str("");
-  histoName << "Other_Digis_Strip" << tag.c_str() << id;
+  histoName << "Other_Digis_Forward" << tag.c_str() << id;
   local_histos.otherSimHits[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 100, 0., 0.);
 
   /*
@@ -818,6 +938,31 @@ std::vector<unsigned int> BrickedRecHits::getSimTrackId(
     }
   }
   return retvec;
+}
+
+const std::pair<double, double> BrickedRecHits::pixel_cell_transformation_(
+    const MeasurementPoint& pos, unsigned int icell, const std::pair<double, double>& pitch) {
+  return pixel_cell_transformation_(std::pair<double, double>({pos.x(), pos.y()}), icell, pitch);
+}
+
+const std::pair<double, double> BrickedRecHits::pixel_cell_transformation_(
+    const std::pair<double, double>& pos, unsigned int icell, const std::pair<double, double>& pitch) {
+  // Get the position modulo icell
+  // Case the whole detector (icell==0)
+  double xmod = pos.first;
+  double ymod = pos.second;
+
+
+  // Actual pixel cells
+  if (icell != 0) {
+    xmod = std::fmod(pos.first, icell);
+    ymod = std::fmod(pos.second, icell);
+  }
+
+  const double xcell = xmod * pitch.first*1e4;
+  const double ycell = ymod * pitch.second*1e4;
+
+  return std::pair<double, double>({xcell, ycell});
 }
 
 DEFINE_FWK_MODULE(BrickedRecHits);

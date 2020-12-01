@@ -412,9 +412,6 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
   
   seed_adc = theBuffer(pix.row(), pix.col());
 
-if (isbarrel) {
-  std::cout<<"seed "<<pix.row()<<" "<<pix.col()<<" "<<seed_adc<<" "<<theSeedThreshold<<" "<<thePixelThreshold<<endl;
-}
 
   theBuffer.set_adc(pix, 1);
 

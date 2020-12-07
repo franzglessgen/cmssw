@@ -18,3 +18,7 @@
   <flags   EDM_PLUGIN="1"/>
   <flags CXXFLAGS="-g3"/>
 </library>
+<library   file="ReadBrickedRecHits.cc" name="BrickedRecHits">
+  <flags   EDM_PLUGIN="1"/>
+  <flags CXXFLAGS="-g3"/>
+</library>

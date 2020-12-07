@@ -1,3 +1,4 @@
+
 import FWCore.ParameterSet.Config as cms
 import numpy as np
 
@@ -94,7 +95,7 @@ Dy = cms.PSet(
     zmax   = cms.double(0)
     )
 
-dqmcell = DQMEDAnalyzer('PixelTestBeamValidationB',
+dqmcell = DQMEDAnalyzer('BrickedValidation',
     TracksEntryAngleX = cms.untracked.vdouble(-np.radians(180.0),np.radians(180.0)),
     TracksEntryAngleY = cms.untracked.vdouble(-np.radians(180.0),np.radians(180.0)),
     Nxbins_cell0 = cms.untracked.int32(1000),

@@ -1,12 +1,12 @@
-#ifndef __SimTracker_SiPhase2Digitizer_PixelTestBeamValidation_h
-#define __SimTracker_SiPhase2Digitizer_PixelTestBeamValidation_h
+#ifndef __SimTracker_SiPhase2Digitizer_BrickedValidation_h
+#define __SimTracker_SiPhase2Digitizer_BrickedValidation_h
 
 // -*- C++ -*-
 //
 // Package:    SimTracker/SiPhase2Digitizer
-// Class:      PixelTestBeamValidation
+// Class:      BrickedValidation
 //
-/**\class PixelTestBeamValidation PixelTestBeamValidation.cc
+/**\class BrickedValidation BrickedValidation.cc
  
   Description: Access Digi collection and creates histograms accumulating
                data from the module to different pixel cells, 1x1 cell, 
@@ -63,10 +63,10 @@ class GeomDet;
 class PSimHit;
 class PixelGeomDetUnit;
 
-class PixelTestBeamValidation : public DQMEDAnalyzer {
+class BrickedValidation : public DQMEDAnalyzer {
 public:
-  explicit PixelTestBeamValidation(const edm::ParameterSet &);
-  ~PixelTestBeamValidation() override;
+  explicit BrickedValidation(const edm::ParameterSet &);
+  ~BrickedValidation() override;
 
   void dqmBeginRun(const edm::Run &iRun, const edm::EventSetup &iSetup) override;
   void bookHistograms(DQMStore::IBooker &ibooker, edm::Run const &iRun, edm::EventSetup const &iSetup) override;

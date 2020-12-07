@@ -12,11 +12,16 @@
 <use   name="FWCore/ParameterSet"/>
 <use   name="DQMServices/Core"/>
 <use   name="DataFormats/Common"/>
+<use   name="CommonTools/UtilAlgos"/>
 <library   file="TBeamTest.cc" name="TBeamTest">
   <flags   EDM_PLUGIN="1"/>
   <flags CXXFLAGS="-g3"/>
 </library>
 <library   file="PixelTestBeamValidation.cc" name="PixelTestBeamValidation">
+  <flags   EDM_PLUGIN="1"/>
+  <flags CXXFLAGS="-g3"/>
+</library>
+<library   file="BrickedValidation.cc" name="BrickedValidation">
   <flags   EDM_PLUGIN="1"/>
   <flags CXXFLAGS="-g3"/>
 </library>

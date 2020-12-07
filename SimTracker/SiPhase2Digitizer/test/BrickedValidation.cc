@@ -26,7 +26,7 @@
 #include <algorithm>
 
 // XXX - Be careful the relative position
-#include "PixelTestBeamValidation.h"
+#include "BrickedValidation.h"
 
 // Some needed units (um are more suited to the pixel size of the sensors)
 using cms_units::operators::operator""_deg;
@@ -35,7 +35,7 @@ constexpr double operator""_inv_um(long double length) { return length * 1e4; }
 
 using Phase2TrackerGeomDetUnit = PixelGeomDetUnit;
 
-PixelTestBeamValidation::PixelTestBeamValidation(const edm::ParameterSet& iConfig)
+BrickedValidation::BrickedValidation(const edm::ParameterSet& iConfig)
     : config_(iConfig),
       geomType_(iConfig.getParameter<std::string>("GeometryType")),
       Nxbins_cell0(
@@ -54,7 +54,7 @@ PixelTestBeamValidation::PixelTestBeamValidation(const edm::ParameterSet& iConfi
       digiSimLinkToken_(
           consumes<edm::DetSetVector<PixelDigiSimLink>>(iConfig.getParameter<edm::InputTag>("PixelDigiSimSource"))),
       simTrackToken_(consumes<edm::SimTrackContainer>(iConfig.getParameter<edm::InputTag>("SimTrackSource"))) {
-  LogDebug("PixelTestBeamValidation") << ">>> Construct PixelTestBeamValidation ";
+  LogDebug("BrickedValidation") << ">>> Construct BrickedValidation ";
 
   const std::vector<edm::InputTag> psimhit_v(config_.getParameter<std::vector<edm::InputTag>>("PSimHitSource"));
 
@@ -100,7 +100,7 @@ PixelTestBeamValidation::PixelTestBeamValidation(const edm::ParameterSet& iConfi
 
   if (prov_ref_m.size() != 0) {
     // The algorithm is defined in the implementation of _check_input_angles_
-    use_this_track_ = std::bind(&PixelTestBeamValidation::_check_input_angles_, this, std::placeholders::_1);
+    use_this_track_ = std::bind(&BrickedValidation::_check_input_angles_, this, std::placeholders::_1);
     //edm::LogInfo("Configuration") << "Considering hits from tracks entering the detectors between\n "
     std::cout << "Configuration "
               << "Considering hits from tracks entering the detectors between\n "
@@ -116,19 +116,22 @@ PixelTestBeamValidation::PixelTestBeamValidation(const edm::ParameterSet& iConfi
 //
 // destructor
 //
-PixelTestBeamValidation::~PixelTestBeamValidation() {
-  LogDebug("PixelTestBeamValidation") << ">>> Destroy PixelTestBeamValidation ";
+BrickedValidation::~BrickedValidation() {
+  LogDebug("BrickedValidation") << ">>> Destroy BrickedValidation ";
+  std::cout<< "BrickedValidation " << ">>> Destroy BrickedValidation "<<std::endl;
 }
 
 // -- DQM Begin Run
 //
-void PixelTestBeamValidation::dqmBeginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
-  edm::LogInfo("PixelTestBeamValidation") << "Initialize PixelTestBeamValidation ";
+void BrickedValidation::dqmBeginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
+  edm::LogInfo("BrickedValidation") << "Initialize BrickedValidation ";
+  std::cout<< " FileService " <<std::endl;
 
   edm::Service<TFileService> fs;
 
   int meunit_ini = 100;
 
+  std::cout<< " Histo " <<std::endl;
   
   hlayer = fs->make<TH1F>("hlayer", "Det layer", 100, 0, 100);
   hdetunit = fs->make<TH1F>("hdetunit", "Det unit", 1000, 300000000., 350000000.);
@@ -142,68 +145,74 @@ void PixelTestBeamValidation::dqmBeginRun(const edm::Run& iRun, const edm::Event
   H_track_XYMap_ = fs->make<TH2F>("H_track_RZMap", "RZ Track Map", 100, 0, 100, 100, 0, 100);
   H_track_RZMap_ = fs->make<TH2F>("H_track_RZMap", "RZ Track Map", 100, 0, 100, 100, 0, 100);
   
+  std::cout<< " Histo loop" <<std::endl;
 
-  for (int s = 0; s<meunit_ini; s++){
+
+  int Li [28] = {9,  10,  17, 18,25,  26, 33, 34, 41, 42,49,  50,57,  58, 65, 66, 72,73, 74,80, 81, 82 ,88,  89,90,  96, 97 , 98 };//Layer indices
 
 
-  H_track_dxdzAngle_[s] = fs->make<TH1F>( Form("H_track_dxdzAngle%i", s), "Dxdz angle", 100, -10, 10);
-  H_track_dydzAngle_[s] = fs->make<TH1F>( Form("H_track_dydzAngle%i", s) , "Dydz angle", 100, -10, 10);
-  H_digi_charge1D_[s] = fs->make<TH1F>( Form("H_digi_charge1D%i", s), "Digi charge 1D", 200, 0, 200);
+  
+  for (int s = 0; s<28; s++){
+
+
+  H_track_dxdzAngle_[Li[s]] = fs->make<TH1F>( Form("H_track_dxdzAngle%i", Li[s]), "Dxdz angle", 100, -10, 10);
+  H_track_dydzAngle_[Li[s]] = fs->make<TH1F>( Form("H_track_dydzAngle%i", Li[s]) , "Dydz angle", 100, -10, 10);
+  H_digi_charge1D_[Li[s]] = fs->make<TH1F>( Form("H_digi_charge1D%i", Li[s]), "Digi charge 1D", 200, 0, 200);
   
   
 
-  H_clsize1D_[s] = fs->make<TH1F>( Form("H_clsize1D%i", s), "Cluster size 1D", 30, 0, 30);
-  H_clsize1Dx_[s] = fs->make<TH1F>( Form("H_clsize1Dx%i", s), "Cluster size 1D", 30, 0, 30);
-  H_clsize1Dy_[s] = fs->make<TH1F>( Form("H_clsize1Dy%i", s), "Cluster size 1D", 30, 0, 30);
-  H_charge1D_[s] = fs->make<TH1F>( Form("H_charge1D%i", s), "Charge 1D", 50, 0, 1000);
+  H_clsize1D_[Li[s]] = fs->make<TH1F>( Form("H_clsize1D%i", Li[s]), "Cluster size 1D", 30, 0, 30);
+  H_clsize1Dx_[Li[s]] = fs->make<TH1F>( Form("H_clsize1Dx%i", Li[s]), "Cluster size 1D", 30, 0, 30);
+  H_clsize1Dy_[Li[s]] = fs->make<TH1F>( Form("H_clsize1Dy%i", Li[s]), "Cluster size 1D", 30, 0, 30);
+  H_charge1D_[Li[s]] = fs->make<TH1F>( Form("H_charge1D%i", Li[s]), "Charge 1D", 50, 0, 1000);
   
-  H_dx1D_[s] = fs->make<TH1F>( Form("H_dx1D%i", s), "Residuals x", 200, -30, 30);
-  H_dy1D_[s] = fs->make<TH1F>( Form("H_dy1D%i", s), "Residuals y", 200, -50, 50);	
+  H_dx1D_[Li[s]] = fs->make<TH1F>( Form("H_dx1D%i", Li[s]), "Residuals x", 200, -30, 30);
+  H_dy1D_[Li[s]] = fs->make<TH1F>( Form("H_dy1D%i", Li[s]), "Residuals y", 200, -50, 50);	
 
 
-  H_eff_cell_[s][0] = fs->make<TProfile2D>( Form("H_eff_cell0%i", s), "Efficiency whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
-  H_eff_cell_[s][1] = fs->make<TProfile2D>( Form("H_eff_cell1%i", s), "Efficiency cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_eff_cell_[s][2] = fs->make<TProfile2D>( Form("H_eff_cell2%i", s), "Efficiency cell 2",Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
+  H_eff_cell_[Li[s]][0] = fs->make<TProfile2D>( Form("H_eff_cell0%i", Li[s]), "Efficiency whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_eff_cell_[Li[s]][1] = fs->make<TProfile2D>( Form("H_eff_cell1%i", Li[s]), "Efficiency cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_eff_cell_[Li[s]][2] = fs->make<TProfile2D>( Form("H_eff_cell2%i", Li[s]), "Efficiency cell 2",Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
   
-  H_pshpos_cell_[s][0] = fs->make<TH2F>( Form("H_pshpos_cell0%i", s),"Pos whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
-  H_pshpos_cell_[s][1] = fs->make<TH2F>( Form("H_pshpos_cell1%i", s), "Pos cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_pshpos_cell_[s][2] = fs->make<TH2F>( Form("H_pshpos_cell2%i", s), "Pos cell 2", Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
+  H_pshpos_cell_[Li[s]][0] = fs->make<TH2F>( Form("H_pshpos_cell0%i", Li[s]),"Pos whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_pshpos_cell_[Li[s]][1] = fs->make<TH2F>( Form("H_pshpos_cell1%i", Li[s]), "Pos cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_pshpos_cell_[Li[s]][2] = fs->make<TH2F>( Form("H_pshpos_cell2%i", Li[s]), "Pos cell 2", Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
 
-  H_position_cell_[s][0] = fs->make<TH2F>( Form("H_position_cell0%i", s),"Pos whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
-  H_position_cell_[s][1] = fs->make<TH2F>( Form("H_position_cell1%i", s), "Pos cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_position_cell_[s][2] = fs->make<TH2F>( Form("H_position_cell2%i", s), "Pos cell 2", Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
+  H_position_cell_[Li[s]][0] = fs->make<TH2F>( Form("H_position_cell0%i", Li[s]),"Pos whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_position_cell_[Li[s]][1] = fs->make<TH2F>( Form("H_position_cell1%i", Li[s]), "Pos cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_position_cell_[Li[s]][2] = fs->make<TH2F>( Form("H_position_cell2%i", Li[s]), "Pos cell 2", Nxbins_cell2, 0 , Nxbins_cell2, 4*Nxbins_cell2, 0 , 4*Nxbins_cell2);
 
-  H_dx_cell_[s][0] = fs->make<TProfile2D>( Form("H_dx_cell0%i", s), "Dx whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
-  H_dx_cell_[s][1] = fs->make<TProfile2D>( Form("H_dx_cell1%i", s), "Dx cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_dx_cell_[s][2] = fs->make<TProfile2D>( Form("H_dx_cell2%i", s), "Dx cell 2",Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
+  H_dx_cell_[Li[s]][0] = fs->make<TProfile2D>( Form("H_dx_cell0%i", Li[s]), "Dx whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_dx_cell_[Li[s]][1] = fs->make<TProfile2D>( Form("H_dx_cell1%i", Li[s]), "Dx cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_dx_cell_[Li[s]][2] = fs->make<TProfile2D>( Form("H_dx_cell2%i", Li[s]), "Dx cell 2",Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
             
-  H_dyvsy_cell_[s][0] = fs->make<TProfile>( Form("H_dyvsy_cell0%i", s), "Dyvsy whole detector", 4*Nxbins_cell0 ,0, 4*Nxbins_cell0);
-  H_dyvsy_cell_[s][1] = fs->make<TProfile>( Form("H_dyvsy_cell1%i", s), "Dyvsy cell 1",4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_dyvsy_cell_[s][2] = fs->make<TProfile>( Form("H_dyvsy_cell2%i", s), "Dyvsy cell 2", 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
+  H_dyvsy_cell_[Li[s]][0] = fs->make<TProfile>( Form("H_dyvsy_cell0%i", Li[s]), "Dyvsy whole detector", 4*Nxbins_cell0 ,0, 4*Nxbins_cell0);
+  H_dyvsy_cell_[Li[s]][1] = fs->make<TProfile>( Form("H_dyvsy_cell1%i", Li[s]), "Dyvsy cell 1",4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_dyvsy_cell_[Li[s]][2] = fs->make<TProfile>( Form("H_dyvsy_cell2%i", Li[s]), "Dyvsy cell 2", 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
   
-  H_dxvsx_cell_[s][0] = fs->make<TProfile>( Form("H_dxvsx_cell0%i", s), "Dxvsx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
-  H_dxvsx_cell_[s][1] = fs->make<TProfile>( Form("H_dxvsx_cell1%i", s), "Dxvsx cell 1", Nxbins_cell1, 0, Nxbins_cell1);
-  H_dxvsx_cell_[s][2] = fs->make<TProfile>( Form("H_dxvsx_cell2%i", s), "Dxvsx cell 2", Nxbins_cell2, 0, Nxbins_cell2);
+  H_dxvsx_cell_[Li[s]][0] = fs->make<TProfile>( Form("H_dxvsx_cell0%i", Li[s]), "Dxvsx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
+  H_dxvsx_cell_[Li[s]][1] = fs->make<TProfile>( Form("H_dxvsx_cell1%i", Li[s]), "Dxvsx cell 1", Nxbins_cell1, 0, Nxbins_cell1);
+  H_dxvsx_cell_[Li[s]][2] = fs->make<TProfile>( Form("H_dxvsx_cell2%i", Li[s]), "Dxvsx cell 2", Nxbins_cell2, 0, Nxbins_cell2);
   
-  H_dy_cell_[s][0] = fs->make<TProfile2D>( Form("H_dy_cell0%i", s), "Dy whole detector", Nxbins_cell0, 0, Nxbins_cell0, 4*Nxbins_cell0, 0, 4*Nxbins_cell0);
-  H_dy_cell_[s][1] = fs->make<TProfile2D>( Form("H_dy_cell1%i", s), "Dy cell 1", Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_dy_cell_[s][2] = fs->make<TProfile2D>( Form("H_dy_cell2%i", s), "Dy cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
+  H_dy_cell_[Li[s]][0] = fs->make<TProfile2D>( Form("H_dy_cell0%i", Li[s]), "Dy whole detector", Nxbins_cell0, 0, Nxbins_cell0, 4*Nxbins_cell0, 0, 4*Nxbins_cell0);
+  H_dy_cell_[Li[s]][1] = fs->make<TProfile2D>( Form("H_dy_cell1%i", Li[s]), "Dy cell 1", Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_dy_cell_[Li[s]][2] = fs->make<TProfile2D>( Form("H_dy_cell2%i", Li[s]), "Dy cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
 
-  H_charge_cell_[s][0] = fs->make<TProfile2D>( Form("H_q_cell0%i", s), "Q whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
-  H_charge_cell_[s][1] = fs->make<TProfile2D>( Form("H_q_cell1%i", s), "Q cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_charge_cell_[s][2] = fs->make<TProfile2D>( Form("H_q_cell2%i", s), "Q cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
+  H_charge_cell_[Li[s]][0] = fs->make<TProfile2D>( Form("H_q_cell0%i", Li[s]), "Q whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_charge_cell_[Li[s]][1] = fs->make<TProfile2D>( Form("H_q_cell1%i", Li[s]), "Q cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_charge_cell_[Li[s]][2] = fs->make<TProfile2D>( Form("H_q_cell2%i", Li[s]), "Q cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
 
-  H_clsize_cell_[s][0] = fs->make<TProfile2D>( Form("H_cls_cell0%i", s), "ClS whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
-  H_clsize_cell_[s][1] = fs->make<TProfile2D>( Form("H_cls_cell1%i", s), "ClS cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_clsize_cell_[s][2] = fs->make<TProfile2D>( Form("H_cls_cell2%i", s), "ClS cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
+  H_clsize_cell_[Li[s]][0] = fs->make<TProfile2D>( Form("H_cls_cell0%i", Li[s]), "ClS whole detector", Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
+  H_clsize_cell_[Li[s]][1] = fs->make<TProfile2D>( Form("H_cls_cell1%i", Li[s]), "ClS cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_clsize_cell_[Li[s]][2] = fs->make<TProfile2D>( Form("H_cls_cell2%i", Li[s]), "ClS cell 2",  Nxbins_cell2, 0, Nxbins_cell2, 4*Nxbins_cell2, 0, 4*Nxbins_cell2);
 
-  H_clsize_dx_[s][0] = fs->make<TProfile>( Form("H_cls_dx_cell0%i", s), "ClS dx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
-  H_clsize_dx_[s][1] = fs->make<TProfile>( Form("H_cls_dx_cell1%i", s), "ClS dx cell 1",Nxbins_cell1, 0, Nxbins_cell1);
-  H_clsize_dx_[s][2] = fs->make<TProfile>( Form("H_cls_dx_cell2%i", s), "ClS dx cell 2",  Nxbins_cell2, 0, Nxbins_cell2);
+  H_clsize_dx_[Li[s]][0] = fs->make<TProfile>( Form("H_cls_dx_cell0%i", Li[s]), "ClS dx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
+  H_clsize_dx_[Li[s]][1] = fs->make<TProfile>( Form("H_cls_dx_cell1%i", Li[s]), "ClS dx cell 1",Nxbins_cell1, 0, Nxbins_cell1);
+  H_clsize_dx_[Li[s]][2] = fs->make<TProfile>( Form("H_cls_dx_cell2%i", Li[s]), "ClS dx cell 2",  Nxbins_cell2, 0, Nxbins_cell2);
 
-  H_clsize_dy_[s][0] = fs->make<TProfile>( Form("H_cls_dy_cell0%i", s), "ClS dx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
-  H_clsize_dy_[s][1] = fs->make<TProfile>( Form("H_cls_dy_cell1%i", s), "ClS dx cell 1",4*Nxbins_cell1, 0, 4*Nxbins_cell1);
-  H_clsize_dy_[s][2] = fs->make<TProfile>( Form("H_cls_dy_cell2%i", s), "ClS dx cell 2",  4*Nxbins_cell2, 0, 4*Nxbins_cell2);}
+  H_clsize_dy_[Li[s]][0] = fs->make<TProfile>( Form("H_cls_dy_cell0%i", Li[s]), "ClS dx whole detector", Nxbins_cell0, 0, Nxbins_cell0);
+  H_clsize_dy_[Li[s]][1] = fs->make<TProfile>( Form("H_cls_dy_cell1%i", Li[s]), "ClS dx cell 1",4*Nxbins_cell1, 0, 4*Nxbins_cell1);
+  H_clsize_dy_[Li[s]][2] = fs->make<TProfile>( Form("H_cls_dy_cell2%i", Li[s]), "ClS dx cell 2",  4*Nxbins_cell2, 0, 4*Nxbins_cell2);}
 
 
 
@@ -213,8 +222,11 @@ void PixelTestBeamValidation::dqmBeginRun(const edm::Run& iRun, const edm::Event
 //
 // -- Analyze
 //
-void PixelTestBeamValidation::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BrickedValidation::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   // First clear the memoizers
+
+  std::cout<<" Analysis " <<std::endl;
+
   m_tId_det_simhits_.clear();
   m_illuminated_pixels_.clear();
 
@@ -380,7 +392,7 @@ void PixelTestBeamValidation::analyze(const edm::Event& iEvent, const edm::Event
           // Fill the digi histograms
           vME_digi_charge1D_[me_unit]->Fill(current_digi.adc());
         
-	  H_digi_charge1D_[me_unit]->Fill(current_digi.adc());
+	  //H_digi_charge1D_[me_unit]->Fill(current_digi.adc());
 
 
            // Fill maps: get the position in the sensor local frame to convert into global
@@ -502,7 +514,7 @@ void PixelTestBeamValidation::analyze(const edm::Event& iEvent, const edm::Event
 //
 // -- Book Histograms
 //
-void PixelTestBeamValidation::bookHistograms(DQMStore::IBooker& ibooker,
+void BrickedValidation::bookHistograms(DQMStore::IBooker& ibooker,
                                              edm::Run const& iRun,
                                              edm::EventSetup const& iSetup) {
   // Get Geometry to associate a folder to each Pixel subdetector
@@ -648,14 +660,14 @@ void PixelTestBeamValidation::bookHistograms(DQMStore::IBooker& ibooker,
                                                      yranges[i]));
       }
 
-      std::cout << "PixelTestBeamValidation"
+      std::cout << "BrickedValidation"
                 << "Booking Histograms in: " << folder_name << " ME UNIT:" << me_unit << std::endl;
-      edm::LogInfo("PixelTestBeamValidation") << "Booking Histograms in: " << folder_name << std::endl;
+      edm::LogInfo("BrickedValidation") << "Booking Histograms in: " << folder_name << std::endl;
     }
   }
 }
 
-bool PixelTestBeamValidation::isPixelSystem_(const GeomDetUnit* dunit) const {
+bool BrickedValidation::isPixelSystem_(const GeomDetUnit* dunit) const {
   const auto& dtype = dunit->type();
   if (!dtype.isInnerTracker() || !dtype.isTrackerPixel()) {
     return false;
@@ -664,13 +676,13 @@ bool PixelTestBeamValidation::isPixelSystem_(const GeomDetUnit* dunit) const {
 }
 
 // Helper functions to setup
-int PixelTestBeamValidation::meUnit_(bool isBarrel, int layer, int side) const {
+int BrickedValidation::meUnit_(bool isBarrel, int layer, int side) const {
   // [isBarrel][layer][side]
   // [X][XXX][XX]
   return (static_cast<int>(isBarrel) << 6) | (layer << 3) | side;
 }
 
-PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupH1D_(DQMStore::IBooker& ibooker,
+BrickedValidation::MonitorElement* BrickedValidation::setupH1D_(DQMStore::IBooker& ibooker,
                                                                             const std::string& histoname,
                                                                             const std::string& title) {
   // Config need to have exactly the same histo name
@@ -682,7 +694,7 @@ PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupH1D_(DQMS
                         params.getParameter<double>("xmax"));
 }
 
-PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupH2D_(DQMStore::IBooker& ibooker,
+BrickedValidation::MonitorElement* BrickedValidation::setupH2D_(DQMStore::IBooker& ibooker,
                                                                             const std::string& histoname,
                                                                             const std::string& title) {
   // Config need to have exactly the same histo name
@@ -697,7 +709,7 @@ PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupH2D_(DQMS
                         params.getParameter<double>("ymax"));
 }
 
-PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupH2D_(DQMStore::IBooker& ibooker,
+BrickedValidation::MonitorElement* BrickedValidation::setupH2D_(DQMStore::IBooker& ibooker,
                                                                             const std::string& histoname,
                                                                             const std::string& title,
                                                                             const std::pair<double, double>& xranges,
@@ -714,7 +726,7 @@ PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupH2D_(DQMS
                         yranges.second);
 }
 
-PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupProf2D_(
+BrickedValidation::MonitorElement* BrickedValidation::setupProf2D_(
     DQMStore::IBooker& ibooker,
     const std::string& histoname,
     const std::string& title,
@@ -734,7 +746,7 @@ PixelTestBeamValidation::MonitorElement* PixelTestBeamValidation::setupProf2D_(
                                params.getParameter<double>("zmax"));
 }
 
-const PixelDigi& PixelTestBeamValidation::get_digi_from_channel_(
+const PixelDigi& BrickedValidation::get_digi_from_channel_(
     int ch, const edm::DetSetVector<PixelDigi>::const_iterator& itdigis) {
   for (const auto& dh : *itdigis) {
     if (dh.channel() == ch) {
@@ -745,19 +757,19 @@ const PixelDigi& PixelTestBeamValidation::get_digi_from_channel_(
   throw cms::Exception("DIGI Pixel Validation") << "Not found a PixelDig for the given channel: " << ch;
 }
 
-const SimTrack* PixelTestBeamValidation::get_simtrack_from_id_(unsigned int idx, const edm::SimTrackContainer* stc) {
+const SimTrack* BrickedValidation::get_simtrack_from_id_(unsigned int idx, const edm::SimTrackContainer* stc) {
   for (const auto& st : *stc) {
     if (st.trackId() == idx) {
       return &st;
     }
   }
   // Any simtrack correspond to this trackid index
-  //edm::LogWarning("PixelTestBeamValidation::get_simtrack_from_id_")
-  edm::LogInfo("PixelTestBeamValidation::get_simtrack_from_id_") << "Not found any SimTrack with trackId: " << idx;
+  //edm::LogWarning("BrickedValidation::get_simtrack_from_id_")
+  edm::LogInfo("BrickedValidation::get_simtrack_from_id_") << "Not found any SimTrack with trackId: " << idx;
   return nullptr;
 }
 
-const std::vector<const PSimHit*> PixelTestBeamValidation::get_simhits_from_trackid_(
+const std::vector<const PSimHit*> BrickedValidation::get_simhits_from_trackid_(
     unsigned int tid, unsigned int detid_raw, const std::vector<const edm::PSimHitContainer*>& psimhits) {
   // It was already found?
   if (m_tId_det_simhits_.find(tid) != m_tId_det_simhits_.end()) {
@@ -782,12 +794,12 @@ const std::vector<const PSimHit*> PixelTestBeamValidation::get_simhits_from_trac
   return m_tId_det_simhits_[tid][detid_raw];
 }
 
-const std::pair<double, double> PixelTestBeamValidation::pixel_cell_transformation_(
+const std::pair<double, double> BrickedValidation::pixel_cell_transformation_(
     const MeasurementPoint& pos, unsigned int icell, const std::pair<double, double>& pitch) {
   return pixel_cell_transformation_(std::pair<double, double>({pos.x(), pos.y()}), icell, pitch);
 }
 
-const std::pair<double, double> PixelTestBeamValidation::pixel_cell_transformation_(
+const std::pair<double, double> BrickedValidation::pixel_cell_transformation_(
     const std::pair<double, double>& pos, unsigned int icell, const std::pair<double, double>& pitch) {
   // Get the position modulo icell
   // Case the whole detector (icell==0)
@@ -806,7 +818,7 @@ const std::pair<double, double> PixelTestBeamValidation::pixel_cell_transformati
   return std::pair<double, double>({xcell, ycell});
 }
 
-//bool PixelTestBeamValidation::channel_iluminated_by_(const MeasurementPoint & localpos,int channel, double tolerance) const
+//bool BrickedValidation::channel_iluminated_by_(const MeasurementPoint & localpos,int channel, double tolerance) const
 //{
 //    const auto pos_channel(PixelDigi::channelToPixel(channel));
 //    if( std::fabs(localpos.x()-pos_channel.first) <= tolerance
@@ -817,7 +829,7 @@ const std::pair<double, double> PixelTestBeamValidation::pixel_cell_transformati
 //    return false;
 //}
 
-bool PixelTestBeamValidation::channel_iluminated_by_(const PSimHit& ps,
+bool BrickedValidation::channel_iluminated_by_(const PSimHit& ps,
                                                      int channel,
                                                      const PixelGeomDetUnit* tkDetUnit) {
   // Get the list of pixels illuminated by the PSimHit
@@ -833,7 +845,7 @@ bool PixelTestBeamValidation::channel_iluminated_by_(const PSimHit& ps,
   return false;
 }
 
-std::set<std::pair<int, int>> PixelTestBeamValidation::get_illuminated_pixels_(const PSimHit& ps,
+std::set<std::pair<int, int>> BrickedValidation::get_illuminated_pixels_(const PSimHit& ps,
                                                                                const PixelGeomDetUnit* tkDetUnit) {
   auto ps_key = reinterpret_cast<std::uintptr_t>(&ps);
 
@@ -873,7 +885,7 @@ std::set<std::pair<int, int>> PixelTestBeamValidation::get_illuminated_pixels_(c
   return m_illuminated_pixels_[ps_key];
 }
 
-bool PixelTestBeamValidation::_check_input_angles_(const PSimHit* psimhit) {
+bool BrickedValidation::_check_input_angles_(const PSimHit* psimhit) {
   // Create a vector to check against the range map where
   // X axis is in the key 0, Y axis in the key 1
   const std::vector<double> theta_phi({psimhit->thetaAtEntry(), psimhit->phiAtEntry()});
@@ -888,4 +900,4 @@ bool PixelTestBeamValidation::_check_input_angles_(const PSimHit* psimhit) {
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(PixelTestBeamValidation);
+DEFINE_FWK_MODULE(BrickedValidation);

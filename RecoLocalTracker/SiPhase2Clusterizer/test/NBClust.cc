@@ -67,23 +67,22 @@ struct ClusterHistos {
 
   TH1F* deltaX[3];
   TH1F* deltaY[3];
-  
-  TH1F* deltaYcl[3][5];
-
   TH1F* deltaX_P[3];
   TH1F* deltaY_P[3];
+  
+  TH1F* deltaYcl[3][5];
 
   TH1D* primarySimHits[3];
   TH1D* otherSimHits[3];
 };
 
-class BrickedClust : public edm::EDAnalyzer {
+class NBClust : public edm::EDAnalyzer {
 public:
   typedef std::map<unsigned int, std::vector<PSimHit> > SimHitsMap;
   typedef std::map<unsigned int, SimTrack> SimTracksMap;
 
-  explicit BrickedClust(const edm::ParameterSet&);
-  ~BrickedClust();
+  explicit NBClust(const edm::ParameterSet&);
+  ~NBClust();
   void beginJob() override;
   void endJob() override;
   void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -121,7 +120,7 @@ private:
                                                              const std::pair<double, double> &pitch);
 };
 
-BrickedClust::BrickedClust(const edm::ParameterSet& conf)
+NBClust::NBClust(const edm::ParameterSet& conf)
     : config_(conf),
       //tokenClusters_(consumes<Phase2TrackerCluster1DCollectionNew>(conf.getParameter<edm::InputTag>("src"))),
       tokenLinks_(consumes<edm::DetSetVector<PixelDigiSimLink> >(conf.getParameter<edm::InputTag>("links"))),
@@ -148,9 +147,9 @@ BrickedClust::BrickedClust(const edm::ParameterSet& conf)
 							}
 
 
-BrickedClust::~BrickedClust() {}
+NBClust::~NBClust() {}
 
-void BrickedClust::beginJob() {
+void NBClust::beginJob() {
   edm::Service<TFileService> fs;
   fs->file().cd("/");
   TFileDirectory td = fs->mkdir("Common");
@@ -161,9 +160,9 @@ void BrickedClust::beginJob() {
   trackerLayoutXYEC_ = td.make<TH2F>("XVsYEC", "x vs. y position", 2400, -120.0, 120.0, 2400, -120.0, 120.0);
 }
 
-void BrickedClust::endJob() {}
+void NBClust::endJob() {}
 
-void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& eventSetup) {
+void NBClust::analyze(const edm::Event& event, const edm::EventSetup& eventSetup) {
   /*
      * Get the needed objects
      */
@@ -316,25 +315,16 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
         int pixy = pixelsVec[i].y;  // same, col index, 0-415
         double adc = pixelsVec[i].adc;
 	//std::cout<<pixx<<" "<<pixy<<" "<<adc<<std::endl;
+      	//histogramLayer->second.clusterCharge[det]->Fill(adc);
       	histogramLayer->second.clusterCol[det]->Fill(pixx);
       	histogramLayer->second.clusterRow[det]->Fill(pixy);
          
 	cluster_tot += adc;
           // Use the center of the pixel
         cluster_position.first += adc * (pixx + 0.5);
-          
-	  //std::cout<<(current_digi.row()%2)<<std::endl; 
-
-	if (tkDetUnit->specificTopology().isBricked() && (int(pixx)%2)){
-	  cluster_position.second += adc * (pixy + 0.5+ 0.5);
-	  //std::cout<<"bricked"<<std::endl;
-									}
+	cluster_position.second += adc * (pixy + 0.5);
 		
-	 //if (tkDetUnit->specificTopology().isBricked() && (current_digi.row()%2)) 
-          
-	else cluster_position.second += adc * (pixy + 0.5);
-		
-				}  // end if subdet (pixel loop)
+					} // end if subdet (pixel loop)
 
 
       histogramLayer->second.clusterCharge[det]->Fill(cluster_tot);
@@ -350,6 +340,12 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       LocalPoint localPosClu = tkDetUnit->specificTopology().localPosition(mpClu);
      
       
+      //unsigned int s1 = 2; 
+      //const std::pair<double, double> icell_psh1 = pixel_cell_transformation_(mpClu, s1, pitch);
+
+      //std::cout<<" c1 "<<icell_psh1.first<<" "<<icell_psh1.second<<std::endl;
+      //std::cout<<" psh 1 "<<localPosClu.x()<<" "<<localPosClu.y()<<std::endl;
+
 
       //Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
       Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
@@ -363,14 +359,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 	        
 	int chax = int(pixelsVec[i].x);  // index as float=iteger, row index, 0-159
         int chay = int(pixelsVec[i].y);  // same, col index, 0-415
-	
-
-	//if (tkDetUnit->specificTopology().isBricked() && (int(chax)%2)) chay
                   
-        //MeasurementPoint mpLoc(chax, chay);
-	
-        //LocalPoint localLoc = tkDetUnit->specificTopology().localPosition(mpLoc);
-	//unsigned int channel = tkDetUnit->specificTopology().channel(localLoc);
 	unsigned int channel(PixelDigi::pixelToChannel(chax, chay));
       
 
@@ -391,10 +380,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       // find the closest simhit
       // this is needed because otherwise you get cases with simhits and clusters being swapped
       // when there are more than 1 cluster with common simtrackids
-      
-
-
-
+      //const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
       PSimHit simhit;  // bad naming to avoid changing code below. This is the closest simhit in x
 
       const PSimHit* simhitSentinel = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
@@ -444,6 +430,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
         continue;}
 
 
+
       // only look at simhits from highpT tracks
       auto simTrackIt(simTracks.find(simhit.trackId()));
       if (simTrackIt == simTracks.end()){
@@ -465,7 +452,6 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       unsigned int nch = clustIt->size();
       if (nch > 5)
 	nch = 5; 
-      
 
       // Fill the position histograms
       trackerLayout_->Fill(globalPosClu.z(), globalPosClu.perp());
@@ -485,28 +471,25 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 
       // now get the position of the closest hit
       Local3DPoint localPosHit(simhit.localPosition());
-
       LocalPoint localPosHit2D(localPosHit.x(), localPosHit.y());
 
       const auto psh_pos = tkDetUnit->specificTopology().measurementPosition(simhit.localPosition());
-      
+
+      //std::cout<<" psh "<<localPosHit.x()<<" "<<localPosHit.y()<<std::endl;
+
       unsigned int s = 2; 
       const std::pair<double, double> icell_psh = pixel_cell_transformation_(psh_pos, s, pitch);
       //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
       histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
-      //std::cout<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
 
+      //std::cout<<" c2 "<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
       histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
       histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
       histogramLayer->second.deltaX[det]->Fill((localPosClu.x() - localPosHit.x()));
-      //histogramLayer->second.deltaY[det]->Fill((localPosClu.y() - localPosHit.y()));
+      histogramLayer->second.deltaY[det]->Fill((localPosClu.y() - localPosHit.y()));
       
+
       histogramLayer->second.deltaYcl[det][nch-1]->Fill((localPosClu.y() - localPosHit.y()));
-      
-
-	histogramLayer->second.deltaY[det]->Fill((localPosClu.y() - localPosHit.y()));
-
-
 
 
       histogramLayer->second.clusterDXvsX[det]->Fill(icell_psh.first, (localPosClu.x() - localPosHit.x()));
@@ -551,7 +534,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 }
 
 // Create the histograms
-std::map<unsigned int, ClusterHistos>::iterator BrickedClust::createLayerHistograms(
+std::map<unsigned int, ClusterHistos>::iterator NBClust::createLayerHistograms(
     unsigned int ival) {
   std::ostringstream fname1, fname2;
 
@@ -757,6 +740,8 @@ std::map<unsigned int, ClusterHistos>::iterator BrickedClust::createLayerHistogr
 
 	}
 
+
+
   /*
      * Delta position with simHits for primary tracks only
      */
@@ -812,7 +797,7 @@ std::map<unsigned int, ClusterHistos>::iterator BrickedClust::createLayerHistogr
   return insertedIt.first;
 }
 
-std::vector<unsigned int> BrickedClust::getSimTrackId(
+std::vector<unsigned int> NBClust::getSimTrackId(
     const edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks, const DetId& detId, unsigned int channel) {
   std::vector<unsigned int> retvec;
   edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks->find(detId));
@@ -826,12 +811,12 @@ std::vector<unsigned int> BrickedClust::getSimTrackId(
   return retvec;
 }
 
-const std::pair<double, double> BrickedClust::pixel_cell_transformation_(
+const std::pair<double, double> NBClust::pixel_cell_transformation_(
     const MeasurementPoint& pos, unsigned int icell, const std::pair<double, double>& pitch) {
   return pixel_cell_transformation_(std::pair<double, double>({pos.x(), pos.y()}), icell, pitch);
 }
 
-const std::pair<double, double> BrickedClust::pixel_cell_transformation_(
+const std::pair<double, double> NBClust::pixel_cell_transformation_(
     const std::pair<double, double>& pos, unsigned int icell, const std::pair<double, double>& pitch) {
   // Get the position modulo icell
   // Case the whole detector (icell==0)
@@ -851,4 +836,4 @@ const std::pair<double, double> BrickedClust::pixel_cell_transformation_(
   return std::pair<double, double>({xcell, ycell});
 }
 
-DEFINE_FWK_MODULE(BrickedClust);
+DEFINE_FWK_MODULE(NBClust);

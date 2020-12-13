@@ -29,3 +29,7 @@
 <flags EDM_PLUGIN="1"/>
 <flags CXXFLAGS="-g3"/>
 </library>
+<library   file="Phase2TrackerValidateDigi.cc" name="Phase2TrackerValidateDigi">
+<flags EDM_PLUGIN="1"/>
+<flags CXXFLAGS="-g3"/>
+</library>

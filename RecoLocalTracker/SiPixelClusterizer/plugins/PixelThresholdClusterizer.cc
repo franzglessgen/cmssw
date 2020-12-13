@@ -431,7 +431,7 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
            r < std::min(int(acluster.x[curInd]) + 2, theBuffer.rows());
            ++r) {
 
-
+	
 	int LowerAccLimity = 0;
 	int UpperAccLimity = 0;
 
@@ -444,10 +444,12 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
 
 	     LowerAccLimity =std::max(0, int(acluster.y[curInd]) - parity_hit); 
 	     UpperAccLimity = std::min(int(acluster.y[curInd]) + parity_curr + 1,theBuffer.columns());   	} 
-
-	//for (auto c = std::max(0, int(acluster.y[curInd]) - 1);
-        // c < std::min(int(acluster.y[curInd]) + 2, theBuffer.columns());
-        // ++c) 
+	
+	
+	/*
+	for (auto c = std::max(0, int(acluster.y[curInd]) - 1);
+         c < std::min(int(acluster.y[curInd]) + 2, theBuffer.columns());
+         ++c)*/ 
 	
 
 	for (auto c = LowerAccLimity; c < UpperAccLimity; ++c) {
@@ -456,7 +458,7 @@ SiPixelCluster PixelThresholdClusterizer::make_cluster_bricked(const SiPixelClus
           SiPixelCluster::PixelPos newpix(r, c);
           if (!acluster.add(newpix, theBuffer(r, c)))
             goto endClus;
-	  if (isbarrel) {std::cout<<"add "<<r<<" "<<c<<" "<<theBuffer(r,c)<<endl;}
+	  //if (isbarrel) {std::cout<<"add "<<r<<" "<<c<<" "<<theBuffer(r,c)<<endl;}
           theBuffer.set_adc(newpix, 1);
 	  //std::cout<<"col "<<c<<" row "<<r<<std::endl;	 
         }

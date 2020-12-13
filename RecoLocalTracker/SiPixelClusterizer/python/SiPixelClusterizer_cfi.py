@@ -40,8 +40,8 @@ phase2_tracker.toModify(siPixelClusters, # FIXME
   ElectronPerADCGain = 135.0, #600. # it can be changed to something else (e.g. 135e) if needed
   ChannelThreshold = 860,
   SeedThreshold = 860, 
-  ClusterThreshold_L1 = 860, #1600, 
-  ClusterThreshold = 860#1600
+  ClusterThreshold_L1 = 1600,#860, #1600, 
+  ClusterThreshold = 1600#860#1600
 
 )
 from Configuration.ProcessModifiers.premix_stage2_cff import premix_stage2

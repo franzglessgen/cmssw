@@ -24,6 +24,3 @@
 <flags   EDM_PLUGIN="1"/>
 <library   file="CPEAccessTester.cc" name="CPEAccessTester">
 </library>
-<flags   EDM_PLUGIN="1"/>
-<library   file="ReadBrickedRecHit.cc" name="ReadBrickedRecHit">
-</library>

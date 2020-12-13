@@ -21,3 +21,6 @@
 <library   file="BrickedClust.cc" name="BrickedClust">
   <flags   EDM_PLUGIN="1"/>
 </library>
+<library   file="NBClust.cc" name="NBClust">
+  <flags   EDM_PLUGIN="1"/>
+</library>

@@ -263,7 +263,7 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   if (theDetParam.theTopol->isBricked()) collect_edge_charges_bricked(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y, Q_f_b, Q_l_b, lowest_is_bricked, highest_is_bricked);
   else collect_edge_charges(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y);
 
-  std::cout<<lowest_is_bricked<<" is  "<<highest_is_bricked<<std::endl;
+  //std::cout<<lowest_is_bricked<<" is  "<<highest_is_bricked<<std::endl;
 
   
   //--- Find the inner widths along X and Y in one shot.  We
@@ -585,7 +585,7 @@ void PixelCPEGeneric::collect_edge_charges_bricked(ClusterParam& theClusterParam
 }
 
 
-  std::cout<<lowest_is_bricked<<" it  "<<highest_is_bricked<<std::endl;
+  //std::cout<<lowest_is_bricked<<" it  "<<highest_is_bricked<<std::endl;
    
   if (lowest_is_bricked) Q_f_b = Q_b_b;
   else Q_f_b = Q_b_nb;

@@ -334,10 +334,10 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
 
       const auto pitch = tkDetUnit->specificTopology().pitch();
 
-      MeasurementPoint mpClu = tkDetUnit->specificTopology().measurementPosition(localPosClu);
+      //MeasurementPoint mpClu = tkDetUnit->specificTopology().measurementPosition(localPosClu);
 
-      unsigned int s = 2; 
-      const std::pair<double, double> icell_psh = pixel_cell_transformation_(mpClu, s, pitch);
+      //unsigned int s = 2; 
+      //const std::pair<double, double> icell_psh = pixel_cell_transformation_(mpClu, s, pitch);
       
       
       // restrict eta range
@@ -349,10 +349,10 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       //const Phase2TrackerCluster1D* clustIt = &*rechitIt->cluster();
       edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> const& clustIt = rechitIt->cluster();
       const std::vector<SiPixelCluster::Pixel> &pixelsVec = clustIt->pixels();
-      histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
+      //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
 
-      histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
-      histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
+      //histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
+      //histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
 
       histogramLayer->second.clusterSizeX[det]->Fill(clustIt->sizeX());
       histogramLayer->second.clusterSizeY[det]->Fill(clustIt->sizeY());
@@ -389,10 +389,15 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       // find the closest simhit
       // this is needed because otherwise you get cases with simhits and clusters being swapped
       // when there are more than 1 cluster with common simtrackids
-      const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
+      //const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
       
+      PSimHit simhit;  // bad naming to avoid changing code below. This is the closest simhit in x
 
-     std::cout << simHitTokensB_.size() << std::endl;
+      const PSimHit* simhitSentinel = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
+      float minx = 10000;
+      float minx2 = 1000;
+
+     //std::cout << simHitTokensB_.size() << std::endl;
   for (int i= 0, j = 0; i < (int)simHitTokensB_.size() && j < (int)simHitTokensE_.size(); i++, j++){
 
   //for (const auto& sh_token : simHitTokensB_) 
@@ -400,33 +405,56 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
     edm::Handle<edm::PSimHitContainer> simHitsRaw[2];
     event.getByToken(simHitTokensB_[i], simHitsRaw[0]);
     event.getByToken(simHitTokensE_[j], simHitsRaw[1]);
-     std::cout << simHitTokensB_.size() << std::endl;
+    //std::cout << simHitTokensB_.size() << std::endl;
 
 
-      float minx = 10000;
+//      float minx = 10000;
       for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-        for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
-             simhitIt != simHitsRaw[simhitidx]->end();
-             ++simhitIt) {
-          if (rawid == simhitIt->detUnitId()) {
+        //for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+          //   simhitIt != simHitsRaw[simhitidx]->end();
+            // ++simhitIt) {
+          //if (rawid == simhitIt->detUnitId()) {
+        for (auto simhitIt : *simHitsRaw[simhitidx]) {
+          if (rawid == simhitIt.detUnitId()) {
             //std::cout << "=== " << rawid << " " << &*simhitIt << " " << simhitIt->trackId() << " " << simhitIt->localPosition().x() << " " << simhitIt->localPosition().y() << std::endl;
-            auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt->trackId());
-            if (it != clusterSimTrackIds.end() && *it == simhitIt->trackId()) {
-              if (!simhit || fabs(simhitIt->localPosition().x() - localPosClu.x()) < minx) {
-                minx = fabs(simhitIt->localPosition().x() - localPosClu.x());
-                simhit = &*simhitIt;
+            auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt.trackId());
+            if (it != clusterSimTrackIds.end() && *it == simhitIt.trackId()) {
+              //if (!simhit || fabs(simhitIt.localPosition().x() - localPosClu.x()) < minx) {
+                
+		const LocalPoint tk_ep_gbl(simhitIt.localPosition());
+
+		minx2 = sqrt(fabs(tk_ep_gbl.x() - localPosClu.x())* fabs(tk_ep_gbl.x() - localPosClu.x()) + fabs(tk_ep_gbl.y() - localPosClu.y())*fabs(tk_ep_gbl.y() - localPosClu.y()));
+
+		if (minx2 < minx){
+		
+		//std::cout<<" min "<<minx2<<std::endl;
+		//std::cout<<" true ps "<<tk_ep_gbl.x()<<" "<<tk_ep_gbl.y()<<std::endl;
+ 		minx = minx2;
+		//minx = fabs(simhitIt.localPosition().x() - localPosClu.x());
+                //simhit = &simhitIt;
+                simhit = simhitIt;
+                simhitSentinel = &simhitIt;
+		//goto endSim;
               }
             }
+            //if (it != clusterSimTrackIds.end() && *it == simhitIt->trackId()) {
+              //if (!simhit || fabs(simhitIt->localPosition().x() - localPosClu.x()) < minx) {
+                //minx = fabs(simhitIt->localPosition().x() - localPosClu.x());
+                //simhit = &*simhitIt;
+             // }
+           // }
           }
         }
       }
      }
 
-      if (!simhit)
-        continue;
+      //if (!simhit)
+        //continue;
+      if (!simhitSentinel){
+        continue;}
 
       // only look at simhits from highpT tracks
-      std::map<unsigned int, SimTrack>::const_iterator simTrackIt(simTracks.find(simhit->trackId()));
+      std::map<unsigned int, SimTrack>::const_iterator simTrackIt(simTracks.find(simhit.trackId()));
       if (simTrackIt == simTracks.end())
         continue;
 
@@ -463,8 +491,18 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       }
 
       // now get the position of the closest hit
-      Local3DPoint localPosHit(simhit->localPosition());
+      Local3DPoint localPosHit(simhit.localPosition());
       
+      const auto psh_pos = tkDetUnit->specificTopology().measurementPosition(simhit.localPosition());
+      
+      unsigned int s = 2; 
+      const std::pair<double, double> icell_psh = pixel_cell_transformation_(psh_pos, s, pitch);
+      //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
+      histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
+      //std::cout<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
+
+      histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
+      histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
 
 
       histogramLayer->second.clusterDXvsX[det]->Fill(icell_psh.first, (localPosClu.x() - localPosHit.x()));
@@ -503,7 +541,7 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       }
 
       // fill histos for primary particles only
-      unsigned int procT(simhit->processType());
+      unsigned int procT(simhit.processType());
       if (simTrackIt->second.vertIndex() == 0 and
           (procT == 2 || procT == 7 || procT == 9 || procT == 11 || procT == 13 || procT == 15)) {
         ++(nPrimarySimHits[det].at(layer));

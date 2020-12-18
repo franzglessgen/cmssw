@@ -109,7 +109,7 @@ namespace SiPixelUtils {
     //--- here first_pix == last_pix, so the average of the two is still the
     //--- center of the pixel.
     
-    //Make use of the bricked geometry
+    //Make use of the bricked geometry, comment this out
     //if (size == 1) {
       //return geom_center;
     //}
@@ -132,7 +132,7 @@ namespace SiPixelUtils {
       sum_of_edge += 1.0f;
 
     //--- The `effective' charge width -- particle's path in first and last pixels only
-    float W_eff = std::abs(W_pred) - W_inner;
+    float W_eff = std::abs(W_pred) - std::abs(W_inner);
 
     //--- If the observed charge width is inconsistent with the expectations
     //--- based on the track, do *not* use W_pred-W_innner.  Instead, replace
@@ -155,7 +155,7 @@ namespace SiPixelUtils {
       Qsum = 1.0f;
 
     //float hit_pos = geom_center + 0.5f*(Qdiff/Qsum) * W_eff + half_lorentz_shift;
-    float hit_pos = geom_center + 0.5f * (Qdiff / Qsum) * W_eff + 0.5f * (Q_b_corr / Qsum)  ; //bricked correction
+    float hit_pos = geom_center + 0.5f * (Qdiff / Qsum) * W_eff + 0.5f * (Q_b_corr / Qsum)*W_eff  ; //bricked correction
 
     return hit_pos;
   }

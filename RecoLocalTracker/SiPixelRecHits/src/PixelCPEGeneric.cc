@@ -260,12 +260,18 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
 
 
  
+  //if (0) collect_edge_charges_bricked(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y, Q_f_b, Q_l_b, lowest_is_bricked, highest_is_bricked);
   if (theDetParam.theTopol->isBricked()) collect_edge_charges_bricked(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y, Q_f_b, Q_l_b, lowest_is_bricked, highest_is_bricked);
   else collect_edge_charges(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y);
 
   //std::cout<<lowest_is_bricked<<" is  "<<highest_is_bricked<<std::endl;
 
+ 
   
+
+
+
+ 
   //--- Find the inner widths along X and Y in one shot.  We
   //--- compute the upper right corner of the inner pixels
   //--- (== lower left corner of upper right pixel) and
@@ -280,7 +286,10 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
   //--- Lower Left corner of Upper Right pixel -- in measurement frame
   MeasurementPoint meas_LLcorn_URpix(theClusterParam.theCluster->maxPixelRow(),
                                      theClusterParam.theCluster->maxPixelCol());
-  if (theDetParam.theTopol->isBricked()){ 
+ 
+ 
+   //if (0){ 
+   if (theDetParam.theTopol->isBricked()){ 
 
  	if (lowest_is_bricked) meas_URcorn_LLpix = MeasurementPoint(theClusterParam.theCluster->minPixelRow() + 1.0,
                              theClusterParam.theCluster->minPixelCol() + 1.5);
@@ -356,6 +365,7 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
 
 float yPos;
 
+//if (0) yPos = SiPixelUtils::bricked_y_position_formula(
 if (theDetParam.theTopol->isBricked()) yPos = SiPixelUtils::bricked_y_position_formula(
       theClusterParam.theCluster->sizeY(),
       Q_f_Y,
@@ -592,6 +602,24 @@ void PixelCPEGeneric::collect_edge_charges_bricked(ClusterParam& theClusterParam
  	
   if (highest_is_bricked) Q_l_b = -Q_t_b;
   else Q_l_b = -Q_t_nb;
+
+  //Need to add the edge pixels that were missed:
+  
+
+  for (int i = 0; i != isize; ++i) {
+    auto const& pixel = theClusterParam.theCluster->pixel(i);
+    int pix_adc = pixel.adc;
+    if (UseErrorsFromTemplates_ && TruncatePixelCharge_)
+      pix_adc = std::min(pix_adc, theClusterParam.pixmx);
+
+  	if (lowest_is_bricked &&  pixel.y == ymin + 1 && !(pixel.x%2) ) Q_f_Y+=pix_adc; 
+	
+  	if (!highest_is_bricked &&  pixel.y == ymax - 1 && (pixel.x%2) ) Q_l_Y+=pix_adc; 
+		
+				}
+
+
+
 
   //std::cout<<Q_l_b<<" "<<Q_f_b<<" "<<Q_f_X<<" "<<Q_l_X<<" "<<Q_f_Y<<" "<<Q_l_Y<<" Qlb"<<std::endl;
 

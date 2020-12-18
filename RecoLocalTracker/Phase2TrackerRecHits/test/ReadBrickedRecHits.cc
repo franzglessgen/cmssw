@@ -79,6 +79,13 @@ struct RecHitHistos {
   TH1F* pullX_P[3][5];
   TH1F* pullY_P[3][5];
 
+  /*
+  TProfile* deltaX_eta[3][5];
+  TProfile* deltaY_eta[3][5];
+  TProfile* deltaX_eta_P[3][5];
+  TProfile* deltaY_eta_P[3][5];
+  */
+
   TH2F* deltaX_eta[3][5];
   TH2F* deltaY_eta[3][5];
   TH2F* deltaX_eta_P[3][5];
@@ -358,6 +365,8 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       histogramLayer->second.clusterSizeY[det]->Fill(clustIt->sizeY());
 
 
+      double cluster_tot = 0;
+
       // Get all the simTracks that form the cluster
       std::vector<unsigned int> clusterSimTrackIds;
       for (unsigned int i(0); i < (unsigned int)clustIt->size(); ++i) {
@@ -366,7 +375,7 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
 		int chax = int(pixelsVec[i].x);  // index as float=iteger, row index, 0-159
         	int chay = int(pixelsVec[i].y);  // same, col index, 0-415
         	double adc = pixelsVec[i].adc;
-		histogramLayer->second.clusterCharge[det]->Fill(adc);
+		cluster_tot+=adc;
 		histogramLayer->second.clusterCol[det]->Fill(chax);
 		histogramLayer->second.clusterRow[det]->Fill(chay);
                   
@@ -386,6 +395,9 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
         }
       }
 
+	
+
+ 	histogramLayer->second.clusterCharge[det]->Fill(cluster_tot);
       // find the closest simhit
       // this is needed because otherwise you get cases with simhits and clusters being swapped
       // when there are more than 1 cluster with common simtrackids
@@ -507,6 +519,24 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
 
       histogramLayer->second.clusterDXvsX[det]->Fill(icell_psh.first, (localPosClu.x() - localPosHit.x()));
       histogramLayer->second.clusterDYvsY[det]->Fill(icell_psh.second, (localPosClu.y() - localPosHit.y()));
+
+ 	//Look at too high residues
+ 
+
+	if (fabs(localPosClu.x() - localPosHit.x()) > 0.01){
+	
+	      std::cout<<" size "<<clustIt->size()<<std::endl;	
+	      for (unsigned int i(0); i < (unsigned int)clustIt->size(); ++i) {
+			int chax = int(pixelsVec[i].x);  // index as float=iteger, row index, 0-159
+			int chay = int(pixelsVec[i].y);  // same, col index, 0-415
+			double adc = pixelsVec[i].adc;
+
+	      		std::cout<<" x y adc "<<chax<<" "<<chay<<" "<<adc<<" "<<localPosClu.x() - localPosHit.x()<<std::endl;	
+			
+
+
+					}} 
+
 
       // and fill bias and pull histograms
       histogramLayer->second.deltaX[det][0]->Fill(localPosClu.x() - localPosHit.x());
@@ -637,11 +667,11 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
 
   histoName.str("");
   histoName << "Cluster_Charge_Barrel" << tag.c_str() << id;
-  local_histos.clusterCharge[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 30000);
+  local_histos.clusterCharge[1] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 60000);
   
   histoName.str("");
   histoName << "Cluster_Charge_Forward" << tag.c_str() << id;
-  local_histos.clusterCharge[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 30000);
+  local_histos.clusterCharge[2] = td.make<TH1D>(histoName.str().c_str(), histoName.str().c_str(), 1000, 0 , 60000);
 
 
   histoName.str("");
@@ -772,40 +802,40 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
 
     histoName.str("");
     histoName << "Delta_X_Barrel" << tag.c_str() << id << clsstr.c_str();
-    local_histos.deltaX[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
+    local_histos.deltaX[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.003, 0.003);
 
     histoName.str("");
     histoName << "Delta_X_Forward" << tag.c_str() << id << clsstr.c_str();
-    local_histos.deltaX[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
+    local_histos.deltaX[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.003, 0.003);
 
     histoName.str("");
     histoName << "Delta_Y_Barrel" << tag.c_str() << id << clsstr.c_str();
-    local_histos.deltaY[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
+    local_histos.deltaY[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.01, 0.01);
 
     histoName.str("");
     histoName << "Delta_Y_Forward" << tag.c_str() << id << clsstr.c_str();
-    local_histos.deltaY[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.02, 0.02);
+    local_histos.deltaY[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.01, 0.01);
 
     if (makeEtaPlots_) {
       histoName.str("");
       histoName << "Delta_X_vs_Eta_Barrel" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaX_eta[1][cls] =
-          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.003, 0.003);
 
       histoName.str("");
       histoName << "Delta_X_vs_Eta_Forward" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaX_eta[2][cls] =
-          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.003, 0.003);
 
       histoName.str("");
       histoName << "Delta_Y_vs_Eta_Barrel" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaY_eta[1][cls] =
-          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.2, 0.2);
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.01, 0.01);
 
       histoName.str("");
       histoName << "Delta_Y_vs_Eta_Forward" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaY_eta[2][cls] =
-          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -3, 3);
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.01, 0.01);
     }
 
     /*

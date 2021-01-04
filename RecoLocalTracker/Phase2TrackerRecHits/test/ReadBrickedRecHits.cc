@@ -57,6 +57,7 @@ struct RecHitHistos {
   TH1D* clusterSize[3];
   TH1D* clusterCharge[3];
   TH1D* clusterSizeX[3];
+  TProfile* clusterSizeXvsEta[3];
   TH1D* clusterSizeY[3];
   TProfile2D* clusterSize2D[3];
   TProfile* clusterSizeXvsX[3];
@@ -365,6 +366,9 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       histogramLayer->second.clusterSizeY[det]->Fill(clustIt->sizeY());
 
 
+      histogramLayer->second.clusterSizeXvsEta[det]->Fill(eta, clustIt->sizeX());
+      
+
       double cluster_tot = 0;
 
       // Get all the simTracks that form the cluster
@@ -506,7 +510,20 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       Local3DPoint localPosHit(simhit.localPosition());
       
       const auto psh_pos = tkDetUnit->specificTopology().measurementPosition(simhit.localPosition());
-      
+     
+      //Define a fiducial region far from the Z edge of the barrel modules
+	/*
+      const int ncols = tkDetUnit->specificTopology().ncolumns();
+
+      if (psh_pos.y() > ncols -1.5  || psh_pos.y() < 1.5 ){
+	std::cout<<psh_pos.y()<<" "<<ncols<<" "<<std::endl;
+	continue;
+							}
+	*/
+
+	
+
+ 
       unsigned int s = 2; 
       const std::pair<double, double> icell_psh = pixel_cell_transformation_(psh_pos, s, pitch);
       //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
@@ -706,6 +723,15 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
   histoName.str("");
   histoName << "Cluster_SizeYvsY_Forward" << tag.c_str() << id;
   local_histos.clusterSizeYvsY[2] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 200, 0 , 200);
+  
+
+  histoName.str("");
+  histoName << "Cluster_SizeXvsEta_Barrel" << tag.c_str() << id;
+  local_histos.clusterSizeXvsEta[1] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5 , 2.5);
+
+  histoName.str("");
+  histoName << "Cluster_SizeXvsEta_Forward" << tag.c_str() << id;
+  local_histos.clusterSizeXvsEta[2] = td.make<TProfile>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5 , 2.5);
 
 
 

@@ -36,7 +36,8 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', ''
 process.source = cms.Source("PoolSource",
     fileNames =  cms.untracked.vstring(
         #'file:/eos/cms/store/relval/CMSSW_11_2_0_pre5/RelValTTbar_14TeV/GEN-SIM-RECO/PU25ns_110X_mcRun4_realistic_v3_2026D49PU200-v1/20000/CA4DC8DF-AAEC-DA43-931B-BF234D979A9D.root'
-        'file:RecoHits_10000.root'
+        #'file:/eos/user/f/fglessge/Bricked_pixels/Data/RecoHits_pointlike_10000.root'
+        'file:RecoHits_pointlike_NB_10000.root'
 	)
 )
 

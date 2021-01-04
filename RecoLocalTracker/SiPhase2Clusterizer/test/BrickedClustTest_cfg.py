@@ -19,7 +19,7 @@ process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', '')
 
 
 # Number of events (-1 = all)
@@ -29,7 +29,7 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input file
 process.source = cms.Source('PoolSource',
-    fileNames = cms.untracked.vstring('file:RecoHits_10000.root')
+    fileNames = cms.untracked.vstring('file:RecoHits_pointlike_10000.root')
 )
 
 # Output

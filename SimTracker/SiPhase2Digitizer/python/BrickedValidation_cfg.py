@@ -24,12 +24,13 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
  
 # Other statements
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', '')
 # list of files
 
 process.source = cms.Source("PoolSource",
      fileNames =  cms.untracked.vstring(
-         'file:Digis_NB_10000.root'
+	 'file:/eos/user/f/fglessge/Bricked_pixels/Data/Digis_pointlike_NB_10000.root'
+         #'file:Digis_NB_10000.root'
        )
  )
  # Production Info
@@ -42,7 +43,7 @@ process.configurationMetadata = cms.untracked.PSet(
 
 
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('Histo_Digi_NB_10000.root')
+    fileName = cms.string('Histo_Digi_NB_PL_10000.root')
 )
  
 process.DQMoutput = cms.OutputModule("PoolOutputModule",

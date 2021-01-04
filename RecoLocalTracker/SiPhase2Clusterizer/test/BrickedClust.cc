@@ -256,7 +256,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       std::cout << "UNKNOWN DETECTOR TYPE!" << std::endl;
     }
 
-     std::cout << layer << std::endl;
+     //std::cout << layer << std::endl;
     // Get the geomdet
     const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
     const Phase2TrackerGeomDetUnit* tkDetUnit = dynamic_cast<const Phase2TrackerGeomDetUnit*>(geomDetUnit); 
@@ -300,7 +300,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 
 
       const auto pitch = tkDetUnit->specificTopology().pitch();
-      std::cout<<pitch.first<<" "<<pitch.second<<std::endl;
+      //std::cout<<pitch.first<<" "<<pitch.second<<std::endl;
 
  
       double cluster_tot = 0;
@@ -312,7 +312,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
         int pixy = pixelsVec[i].y;  // same, col index, 0-415
         double adc = pixelsVec[i].adc;
 	std::cout<<pixx<<" "<<pixy<<std::endl;
-      	histogramLayer->second.clusterCharge[det]->Fill(adc);
+      	//histogramLayer->second.clusterCharge[det]->Fill(adc);
       	histogramLayer->second.clusterCol[det]->Fill(pixx);
       	histogramLayer->second.clusterRow[det]->Fill(pixy);
          
@@ -325,6 +325,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 				}  // end if subdet (pixel loop)
 
 
+      histogramLayer->second.clusterCharge[det]->Fill(cluster_tot);
       cluster_position.first /= double(cluster_tot);
       cluster_position.second /= double(cluster_tot);
 
@@ -342,7 +343,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       const std::pair<double, double> icell_psh = pixel_cell_transformation_(mpClu, s, pitch);
       //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
       histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
-      std::cout<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
+      //std::cout<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
 
       histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
       histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
@@ -384,7 +385,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       // when there are more than 1 cluster with common simtrackids
       const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
 
-     std::cout << simHitTokensB_.size() << std::endl;
+     //std::cout << simHitTokensB_.size() << std::endl;
   for (int i= 0, j = 0; i < (int)simHitTokensB_.size() && j < (int)simHitTokensE_.size(); i++, j++){
 
   //for (const auto& sh_token : simHitTokensB_) 
@@ -392,7 +393,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
     edm::Handle<edm::PSimHitContainer> simHitsRaw[2];
     event.getByToken(simHitTokensB_[i], simHitsRaw[0]);
     event.getByToken(simHitTokensE_[j], simHitsRaw[1]);
-     std::cout << simHitTokensB_.size() << std::endl;
+    //std::cout << simHitTokensB_.size() << std::endl;
 
       float minx = 10000;
       for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
@@ -493,7 +494,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
     }
   }
 
-     std::cout <<  " " << 9 << std::endl;
+     //std::cout <<  " " << 9 << std::endl;
 
 }
 

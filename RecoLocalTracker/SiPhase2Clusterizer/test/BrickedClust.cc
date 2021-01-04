@@ -67,6 +67,9 @@ struct ClusterHistos {
 
   TH1F* deltaX[3];
   TH1F* deltaY[3];
+  
+  TH1F* deltaYcl[3][5];
+
   TH1F* deltaX_P[3];
   TH1F* deltaY_P[3];
 
@@ -199,7 +202,8 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
   // Get the geometry
   edm::ESHandle<TrackerGeometry> geomHandle;
   eventSetup.get<TrackerDigiGeometryRecord>().get("idealForDigi", geomHandle);
-  const TrackerGeometry* tkGeom = &(*geomHandle);
+  //const TrackerGeometry* tkGeom = &(*geomHandle);
+  const TrackerGeometry* tkGeom = geomHandle.product();
 
   edm::ESHandle<TrackerTopology> tTopoHandle;
   eventSetup.get<TrackerTopologyRcd>().get(tTopoHandle);
@@ -258,7 +262,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 
      //std::cout << layer << std::endl;
     // Get the geomdet
-    const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+    const TrackerGeomDet* geomDetUnit(tkGeom->idToDetUnit(detId));
     const Phase2TrackerGeomDetUnit* tkDetUnit = dynamic_cast<const Phase2TrackerGeomDetUnit*>(geomDetUnit); 
     if (!geomDetUnit)
       continue;
@@ -311,15 +315,13 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 	int pixx = pixelsVec[i].x;  // index as float=iteger, row index, 0-159
         int pixy = pixelsVec[i].y;  // same, col index, 0-415
         double adc = pixelsVec[i].adc;
-	std::cout<<pixx<<" "<<pixy<<std::endl;
-      	//histogramLayer->second.clusterCharge[det]->Fill(adc);
+	//std::cout<<pixx<<" "<<pixy<<" "<<adc<<std::endl;
       	histogramLayer->second.clusterCol[det]->Fill(pixx);
       	histogramLayer->second.clusterRow[det]->Fill(pixy);
          
 	cluster_tot += adc;
           // Use the center of the pixel
         cluster_position.first += adc * (pixx + 0.5);
-          
 	cluster_position.second += adc * (pixy + 0.5);
 		
 				}  // end if subdet (pixel loop)
@@ -336,17 +338,7 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       //Local3DPoint localPosClu = geomDetUnit->topology().localPosition(mpClu);
       //LocalPoint localPosClu = tkDetUnit->specificTopology().localPosition(mpClu);
       LocalPoint localPosClu = tkDetUnit->specificTopology().localPosition(mpClu);
-    
-      //const auto psh_pos = tkDetUnit->specificTopology().measurementPosition(ps->localPosition());
- 
-      unsigned int s = 2; 
-      const std::pair<double, double> icell_psh = pixel_cell_transformation_(mpClu, s, pitch);
-      //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
-      histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
-      //std::cout<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
-
-      histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
-      histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
+     
       
 
       //Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
@@ -361,8 +353,14 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
 	        
 	int chax = int(pixelsVec[i].x);  // index as float=iteger, row index, 0-159
         int chay = int(pixelsVec[i].y);  // same, col index, 0-415
-                  
+	
 
+	//if (tkDetUnit->specificTopology().isBricked() && (int(chax)%2)) chay
+                  
+        //MeasurementPoint mpLoc(chax, chay);
+	
+        //LocalPoint localLoc = tkDetUnit->specificTopology().localPosition(mpLoc);
+	//unsigned int channel = tkDetUnit->specificTopology().channel(localLoc);
 	unsigned int channel(PixelDigi::pixelToChannel(chax, chay));
       
 
@@ -383,8 +381,15 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       // find the closest simhit
       // this is needed because otherwise you get cases with simhits and clusters being swapped
       // when there are more than 1 cluster with common simtrackids
-      const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
+      
 
+
+
+      PSimHit simhit;  // bad naming to avoid changing code below. This is the closest simhit in x
+
+      const PSimHit* simhitSentinel = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
+      float minx = 10000;
+      float minx2 = 1000;
      //std::cout << simHitTokensB_.size() << std::endl;
   for (int i= 0, j = 0; i < (int)simHitTokensB_.size() && j < (int)simHitTokensE_.size(); i++, j++){
 
@@ -393,31 +398,44 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
     edm::Handle<edm::PSimHitContainer> simHitsRaw[2];
     event.getByToken(simHitTokensB_[i], simHitsRaw[0]);
     event.getByToken(simHitTokensE_[j], simHitsRaw[1]);
-    //std::cout << simHitTokensB_.size() << std::endl;
+     //std::cout << simHitTokensB_.size() << std::endl;
 
-      float minx = 10000;
       for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
         for (auto simhitIt : *simHitsRaw[simhitidx]) {
           if (rawid == simhitIt.detUnitId()) {
             //std::cout << "=== " << rawid << " " << &simhitIt << " " << simhitIt.trackId() << " " << simhitIt.localPosition().x() << " " << simhitIt.localPosition().y() << std::endl;
             auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt.trackId());
             if (it != clusterSimTrackIds.end() && *it == simhitIt.trackId()) {
-              if (!simhit || fabs(simhitIt.localPosition().x() - localPosClu.x()) < minx) {
-                minx = fabs(simhitIt.localPosition().x() - localPosClu.x());
-                simhit = &simhitIt;
+              //if (!simhit || fabs(simhitIt.localPosition().x() - localPosClu.x()) < minx) {
+                
+		const LocalPoint tk_ep_gbl(simhitIt.localPosition());
+
+		minx2 = sqrt(fabs(tk_ep_gbl.x() - localPosClu.x())* fabs(tk_ep_gbl.x() - localPosClu.x()) + fabs(tk_ep_gbl.y() - localPosClu.y())*fabs(tk_ep_gbl.y() - localPosClu.y()));
+
+		if (minx2 < minx){
+		
+		//std::cout<<" min "<<minx2<<std::endl;
+		//std::cout<<" true ps "<<tk_ep_gbl.x()<<" "<<tk_ep_gbl.y()<<std::endl;
+ 		minx = minx2;
+		//minx = fabs(simhitIt.localPosition().x() - localPosClu.x());
+                //simhit = &simhitIt;
+                simhit = simhitIt;
+                simhitSentinel = &simhitIt;
+		//goto endSim;
               }
             }
           }
         }
       }
     }
-      if (!simhit){
+
+      //endSim;
+      if (!simhitSentinel){
         continue;}
 
 
-
       // only look at simhits from highpT tracks
-      auto simTrackIt(simTracks.find(simhit->trackId()));
+      auto simTrackIt(simTracks.find(simhit.trackId()));
       if (simTrackIt == simTracks.end()){
         continue;}
 
@@ -434,6 +452,10 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
        // cluster size
       
       histogramLayer->second.clusterSize[det]->Fill(clustIt->size());
+      unsigned int nch = clustIt->size();
+      if (nch > 5)
+	nch = 5; 
+      
 
       // Fill the position histograms
       trackerLayout_->Fill(globalPosClu.z(), globalPosClu.perp());
@@ -452,15 +474,36 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
       }
 
       // now get the position of the closest hit
-      Local3DPoint localPosHit(simhit->localPosition());
+      Local3DPoint localPosHit(simhit.localPosition());
 
+      LocalPoint localPosHit2D(localPosHit.x(), localPosHit.y());
+
+      const auto psh_pos = tkDetUnit->specificTopology().measurementPosition(simhit.localPosition());
+      
+      unsigned int s = 2; 
+      const std::pair<double, double> icell_psh = pixel_cell_transformation_(psh_pos, s, pitch);
+      //histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,clustIt->size());
+      histogramLayer->second.clusterSize2D[det]->Fill(icell_psh.first, icell_psh.second,pixelsVec.size());
+      //std::cout<<icell_psh.first<<" "<<icell_psh.second<<std::endl;
+
+      histogramLayer->second.clusterSizeXvsX[det]->Fill(icell_psh.first, clustIt->sizeX());
+      histogramLayer->second.clusterSizeYvsY[det]->Fill(icell_psh.second, clustIt->sizeY());
       histogramLayer->second.deltaX[det]->Fill((localPosClu.x() - localPosHit.x()));
-      histogramLayer->second.deltaY[det]->Fill((localPosClu.y() - localPosHit.y()));
+      //histogramLayer->second.deltaY[det]->Fill((localPosClu.y() - localPosHit.y()));
+      
+      histogramLayer->second.deltaYcl[det][nch-1]->Fill((localPosClu.y() - localPosHit.y()));
+      
+
+	histogramLayer->second.deltaY[det]->Fill((localPosClu.y() - localPosHit.y()));
+
+
+
+
       histogramLayer->second.clusterDXvsX[det]->Fill(icell_psh.first, (localPosClu.x() - localPosHit.x()));
       histogramLayer->second.clusterDYvsY[det]->Fill(icell_psh.second, (localPosClu.y() - localPosHit.y()));
 
       // Primary particles only
-      unsigned int procT(simhit->processType());
+      unsigned int procT(simhit.processType());
       if (simTrackIt->second.vertIndex() == 0 and
           (procT == 2 || procT == 7 || procT == 9 || procT == 11 || procT == 13 || procT == 15)) {
         ++(nPrimarySimHits[det].at(layer));
@@ -494,7 +537,6 @@ void BrickedClust::analyze(const edm::Event& event, const edm::EventSetup& event
     }
   }
 
-     //std::cout <<  " " << 9 << std::endl;
 
 }
 
@@ -685,7 +727,25 @@ std::map<unsigned int, ClusterHistos>::iterator BrickedClust::createLayerHistogr
 
   histoName.str("");
   histoName << "Delta_Y_Forward" << tag.c_str() << id;
-  local_histos.deltaY[2] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -3., 3.);
+  local_histos.deltaY[2] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.01, 0.01);
+
+
+
+  for (int cls = 0; cls < 5; ++cls) {
+    std::string clsstr = "";
+    clsstr = "_ClS_" + std::to_string(cls+1);
+
+
+    histoName.str("");
+    histoName << "Delta_Y_Barrel" << tag.c_str() << id << clsstr.c_str();
+    local_histos.deltaYcl[1][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.01, 0.01);
+
+
+    histoName.str("");
+    histoName << "Delta_Y_Forward" << tag.c_str() << id << clsstr.c_str();
+    local_histos.deltaYcl[2][cls] = td.make<TH1F>(histoName.str().c_str(), histoName.str().c_str(), 100, -0.01, 0.01);
+
+	}
 
   /*
      * Delta position with simHits for primary tracks only
@@ -782,4 +842,7 @@ const std::pair<double, double> BrickedClust::pixel_cell_transformation_(
 }
 
 DEFINE_FWK_MODULE(BrickedClust);
+
+
+
 

@@ -29,12 +29,12 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input file
 process.source = cms.Source('PoolSource',
-    fileNames = cms.untracked.vstring('file:RecoHits_pointlike_NB_10000.root')
+    fileNames = cms.untracked.vstring('file:RecoHits_NB_10000.root')
 )
 
 # Output
 process.TFileService = cms.Service('TFileService',
-    fileName = cms.string('file:cluster_NB_PL_validation.root')
+    fileName = cms.string('file:cluster_NB_validation.root')
 )
 
 # DEBUG

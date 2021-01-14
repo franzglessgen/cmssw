@@ -34,14 +34,14 @@ phase2_tracker.toModify(siPixelClusters, # FIXME
   src = 'simSiPixelDigis:Pixel',
   MissCalibrate = False,
   Phase2Calibration = True,
-  Phase2ReadoutMode = -1, # Flag to decide Readout Mode : linear TDR (-1), dual slope with slope parameters (+1,+2,+3,+4 ...) with threshold subtraction
-  Phase2DigiBaseline = 1200.,
+  Phase2ReadoutMode = 3, #-1, # Flag to decide Readout Mode : linear TDR (-1), dual slope with slope parameters (+1,+2,+3,+4 ...) with threshold subtraction
+  Phase2DigiBaseline = 1000.0, #1200.,
   Phase2KinkADC = 8,
-  ElectronPerADCGain = 135.0, #600. # it can be changed to something else (e.g. 135e) if needed
-  ChannelThreshold = 860,
-  SeedThreshold = 860, 
-  ClusterThreshold_L1 = 1600,#860, #1600, 
-  ClusterThreshold = 1600#860#1600
+  ElectronPerADCGain = 1500, #135.0, #600. # it can be changed to something else (e.g. 135e) if needed
+  ChannelThreshold = 1000,
+  SeedThreshold = 1000, 
+  ClusterThreshold_L1 = 1000,#860, #1600, 
+  ClusterThreshold = 1000#860#1600
 
 )
 from Configuration.ProcessModifiers.premix_stage2_cff import premix_stage2

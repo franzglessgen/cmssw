@@ -80,7 +80,7 @@ Phase2TrackerDigitizerAlgorithm::Phase2TrackerDigitizerAlgorithm(const edm::Para
       // -1         ---> Analog readout, current digitizer (Inner Pixel) (TDR version) with no threshold subtraction
       // Analog readout with dual slope with the "second" slope being 1/2^(n-1) and threshold subtraction (n = 1, 2, 3,4)
       thePhase2ReadoutMode_(conf_specific.getParameter<int>("Phase2ReadoutMode")),
-
+      
       // ADC calibration 1adc count(135e.
       // Corresponds to 2adc/kev, 270[e/kev]/135[e/adc](2[adc/kev]
       // Be careful, this parameter is also used in SiPixelDet.cc to
@@ -1164,7 +1164,7 @@ int Phase2TrackerDigitizerAlgorithm::convertSignalToAdc(uint32_t detID, float si
       // calculate the kink point and the slope
       int dualslope_param = std::min(std::abs(thePhase2ReadoutMode_), max_limit);
       int kink_point = static_cast<int>(theAdcFullScale_ / 2) + 1;
-      temp_signal = std::floor((signal_in_elec - threshold) / theElectronPerADC_) + 1;
+      temp_signal = std::floor((signal_in_elec - threshold) / theElectronPerADC_);
       if (temp_signal > kink_point)
         temp_signal = std::floor((temp_signal - kink_point) / (pow(2, dualslope_param - 1))) + kink_point;
     }

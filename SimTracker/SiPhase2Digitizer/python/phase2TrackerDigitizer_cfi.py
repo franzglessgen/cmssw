@@ -20,18 +20,19 @@ phase2TrackerDigitizer = cms.PSet(
 # Specific parameters
 #Pixel Digitizer Algorithm
     PixelDigitizerAlgorithm = cms.PSet(
-      ElectronPerAdc = cms.double(135.0),#600
+      ElectronPerAdc = cms.double(1500.0),#135
       ReadoutNoiseInElec = cms.double(0.0),
-      ThresholdInElectrons_Barrel = cms.double(860.0),#1200.0,
-      ThresholdInElectrons_Endcap = cms.double(860.0),#1200.0,
+      ThresholdInElectrons_Barrel = cms.double(1000.0),#860.0,
+      ThresholdInElectrons_Endcap = cms.double(1000.0),#860.0,
       AddThresholdSmearing = cms.bool(False),
       ThresholdSmearing_Barrel = cms.double(0.0),
       ThresholdSmearing_Endcap = cms.double(0.0),
       HIPThresholdInElectrons_Barrel = cms.double(1.0e10), # very high value to avoid Over threshold bit
       HIPThresholdInElectrons_Endcap = cms.double(1.0e10), # very high value to avoid Over threshold bit
       NoiseInElectrons = cms.double(0.0),
-      Phase2ReadoutMode = cms.int32(-1), # Flag to decide Readout Mode :Digital(0) or Analog (linear TDR (-1), dual slope with slope parameters (+1,+2,+3,+4) with threshold subtraction)
-      AdcFullScale = cms.int32(150), #15
+      #Phase2ReadoutMode = cms.int32(-1), # Flag to decide Readout Mode :Digital(0) or Analog (linear TDR (-1), dual slope with slope parameters (+1,+2,+3,+4) with threshold subtraction)
+      Phase2ReadoutMode = cms.int32(3), # Flag to decide Readout Mode :Digital(0) or Analog (linear TDR (-1), dual slope with slope parameters (+1,+2,+3,+4) with threshold subtraction)
+      AdcFullScale = cms.int32(15), #15
       TofUpperCut = cms.double(12.5),
       TofLowerCut = cms.double(-12.5),
       AddNoisyPixels = cms.bool(False),
@@ -83,17 +84,17 @@ phase2TrackerDigitizer = cms.PSet(
     ),
 #Pixel-3D Digitizer Algorithm
     Pixel3DDigitizerAlgorithm = cms.PSet(
-      ElectronPerAdc = cms.double(600.0),
+      ElectronPerAdc = cms.double(1500.0),
       ReadoutNoiseInElec = cms.double(0.0),
-      ThresholdInElectrons_Barrel = cms.double(1200.0),
-      ThresholdInElectrons_Endcap = cms.double(1200.0),
+      ThresholdInElectrons_Barrel = cms.double(1000.0),
+      ThresholdInElectrons_Endcap = cms.double(1000.0),
       AddThresholdSmearing = cms.bool(False),
       ThresholdSmearing_Barrel = cms.double(0.0),
       ThresholdSmearing_Endcap = cms.double(0.0),
       HIPThresholdInElectrons_Barrel = cms.double(1.0e10), # very high value to avoid Over threshold bit
       HIPThresholdInElectrons_Endcap = cms.double(1.0e10), # very high value to avoid Over threshold bit
       NoiseInElectrons = cms.double(0.0),
-      Phase2ReadoutMode = cms.int32(-1), # Flag to decide Readout Mode :Digital(0) or Analog (linear TDR (-1), dual slope with slope parameters (+1,+2,+3,+4) with threshold subtraction
+      Phase2ReadoutMode = cms.int32(3), # Flag to decide Readout Mode :Digital(0) or Analog (linear TDR (-1), dual slope with slope parameters (+1,+2,+3,+4) with threshold subtraction
       AdcFullScale = cms.int32(15),
       TofUpperCut = cms.double(12.5),
       TofLowerCut = cms.double(-12.5),
@@ -260,8 +261,13 @@ _premixStage1ModifyDict = dict(
         AddNoisyPixels = False,
         AddInefficiency = False,
         AddThresholdSmearing = False,
-        ElectronPerAdc = phase2TrackerDigitizer.PSPDigitizerAlgorithm.ElectronPerAdc.value(),
-        AdcFullScale = phase2TrackerDigitizer.PSPDigitizerAlgorithm.AdcFullScale.value(),
+        #ElectronPerAdc = phase2TrackerDigitizer.PSPDigitizerAlgorithm.ElectronPerAdc.value(),
+        #AdcFullScale = phase2TrackerDigitizer.PSPDigitizerAlgorithm.AdcFullScale.value(),
+    ),
+    Pixel3DDigitizerAlgorithm = dict(
+        AddNoisyPixels = False,
+        AddInefficiency = False,
+        AddThresholdSmearing = False,
     ),
     PSPDigitizerAlgorithm = dict(
         AddNoisyPixels = False,

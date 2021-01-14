@@ -88,6 +88,8 @@ struct RecHitHistos {
   */
 
   TH2F* deltaX_eta[3][5];
+  TH2F* deltaX_eta_Q[3][5][2];
+  TH2F* deltaY_eta_Q[3][5][2];
   TH2F* deltaY_eta[3][5];
   TH2F* deltaX_eta_P[3][5];
   TH2F* deltaY_eta_P[3][5];
@@ -474,6 +476,13 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       if (simTrackIt == simTracks.end())
         continue;
 
+
+/*	//Only look at primaries:
+      unsigned int procT(simhit.processType());
+      if (!(simTrackIt->second.vertIndex() == 0 and
+          (procT == 2 || procT == 7 || procT == 9 || procT == 11 || procT == 13 || procT == 15))) 
+	continue;	
+*/
       /*
              * Rechit related variables
              */
@@ -512,7 +521,9 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
       const auto psh_pos = tkDetUnit->specificTopology().measurementPosition(simhit.localPosition());
      
       //Define a fiducial region far from the Z edge of the barrel modules
-	/*
+
+
+	/*	
       const int ncols = tkDetUnit->specificTopology().ncolumns();
 
       if (psh_pos.y() > ncols -1.5  || psh_pos.y() < 1.5 ){
@@ -571,6 +582,25 @@ void BrickedRecHits::analyze(const edm::Event& event, const edm::EventSetup& eve
                                                      sqrt(rechitIt->localPositionError().yy()));
       }
       if (makeEtaPlots_) {
+
+	if (cluster_tot >  12000.0*(  sqrt( globalPosClu.z()*globalPosClu.z()+  globalPosClu.perp()*globalPosClu.perp())/globalPosClu.perp())) { 
+        histogramLayer->second.deltaX_eta_Q[det][0][0]->Fill(eta, localPosClu.x() - localPosHit.x());
+        histogramLayer->second.deltaX_eta_Q[det][nch][0]->Fill(eta, localPosClu.x() - localPosHit.x());
+        histogramLayer->second.deltaY_eta_Q[det][0][0]->Fill(eta, localPosClu.y() - localPosHit.y());
+        histogramLayer->second.deltaY_eta_Q[det][nch][0]->Fill(eta, localPosClu.y() - localPosHit.y());
+						}
+
+	else {
+        
+ 
+
+        histogramLayer->second.deltaY_eta_Q[det][0][1]->Fill(eta, localPosClu.y() - localPosHit.y());
+        histogramLayer->second.deltaY_eta_Q[det][nch][1]->Fill(eta, localPosClu.y() - localPosHit.y());
+
+        histogramLayer->second.deltaX_eta_Q[det][0][1]->Fill(eta, localPosClu.x() - localPosHit.x());
+        histogramLayer->second.deltaX_eta_Q[det][nch][1]->Fill(eta, localPosClu.x() - localPosHit.x());
+						}
+
         histogramLayer->second.deltaX_eta[det][0]->Fill(eta, localPosClu.x() - localPosHit.x());
         histogramLayer->second.deltaX_eta[det][nch]->Fill(eta, localPosClu.x() - localPosHit.x());
         histogramLayer->second.deltaY_eta[det][0]->Fill(eta, localPosClu.y() - localPosHit.y());
@@ -844,9 +874,53 @@ std::map<unsigned int, RecHitHistos>::iterator BrickedRecHits::createLayerHistog
 
     if (makeEtaPlots_) {
       histoName.str("");
+      histoName << "Delta_X_vs_Eta_LQ_Barrel" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaX_eta_Q[1][cls][0] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 60, -3, 3, 100, -0.003, 0.003);
+
+      histoName.str("");
+      histoName << "Delta_X_vs_Eta_HQ_Barrel" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaX_eta_Q[1][cls][1] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 60, -3, 3, 100, -0.003, 0.003);
+      
+
+      histoName.str("");
+      histoName << "Delta_X_vs_Eta_LQ_Forward" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaX_eta_Q[2][cls][0] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.003, 0.003);
+      
+      histoName.str("");
+      histoName << "Delta_X_vs_Eta_HQ_Forward" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaX_eta_Q[2][cls][1] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.003, 0.003);
+      
+
+      histoName.str("");
+      histoName << "Delta_Y_vs_Eta_LQ_Barrel" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaY_eta_Q[1][cls][0] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 60, -3, 3, 100, -0.01, 0.01);
+
+      histoName.str("");
+      histoName << "Delta_Y_vs_Eta_HQ_Barrel" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaY_eta_Q[1][cls][1] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 60, -3, 3, 100, -0.01, 0.01);
+      
+
+      histoName.str("");
+      histoName << "Delta_Y_vs_Eta_LQ_Forward" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaY_eta_Q[2][cls][0] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.01, 0.01);
+      
+      histoName.str("");
+      histoName << "Delta_Y_vs_Eta_HQ_Forward" << tag.c_str() << id << clsstr.c_str();
+      local_histos.deltaY_eta_Q[2][cls][1] =
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.01, 0.01);
+
+
+      histoName.str("");
       histoName << "Delta_X_vs_Eta_Barrel" << tag.c_str() << id << clsstr.c_str();
       local_histos.deltaX_eta[1][cls] =
-          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 50, -2.5, 2.5, 100, -0.003, 0.003);
+          td.make<TH2F>(histoName.str().c_str(), histoName.str().c_str(), 60, -3, 3, 100, -0.003, 0.003);
 
       histoName.str("");
       histoName << "Delta_X_vs_Eta_Forward" << tag.c_str() << id << clsstr.c_str();

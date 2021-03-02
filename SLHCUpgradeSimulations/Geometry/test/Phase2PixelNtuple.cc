@@ -60,6 +60,9 @@
 
 //#define EDM_ML_DEBUG
 
+
+
+
 using namespace std;
 using namespace edm;
 using namespace reco;
@@ -309,6 +312,9 @@ void Phase2PixelNtuple::analyze(const edm::Event& e, const edm::EventSetup& es) 
   edm::Handle<SiPixelRecHitCollection> recHitColl;
   e.getByToken(pixelRecHits_token, recHitColl);
   // for finding matched simhit
+  
+
+   //Crashing for 0T B field
   TrackerHitAssociator associate(e, trackerHitAssociatorConfig_);
 
   if ((recHitColl.product())->dataSize() > 0) {
@@ -328,8 +334,15 @@ void Phase2PixelNtuple::analyze(const edm::Event& e, const edm::EventSetup& es) 
       const GeomDet* geomDet(theGeometry->idToDet(detId));
 
       // Loop over rechits for this detid
+      
+
       for (auto iterRecHit : detset) {
         // get matched simhit
+
+
+
+	//With tracking
+	
         matched.clear();
         matched = associate.associateHit(iterRecHit);
         if (!matched.empty()) {
@@ -355,6 +368,9 @@ void Phase2PixelNtuple::analyze(const edm::Event& e, const edm::EventSetup& es) 
             }
           }  // end of simhit loop
         }    // end matched emtpy
+
+
+
         unsigned int subid = detId.subdetId();
         int detid_db = detId.rawId();
         int layer_num = -99, ladder_num = -99, module_num = -99, disk_num = -99, blade_num = -99, panel_num = -99,
@@ -604,9 +620,15 @@ void Phase2PixelNtuple::fillPRecHit(const int detid_db,
     float sim_x1 = closest_simhit->entryPoint().x();
     float sim_x2 = closest_simhit->exitPoint().x();
     recHit_.hx = 0.5 * (sim_x1 + sim_x2);
+    
+    //Local3DPoint localPosHit(closest_simhit->localPosition());
+
+    //recHit_.hx = localPosHit.x();
+	
     float sim_y1 = closest_simhit->entryPoint().y();
     float sim_y2 = closest_simhit->exitPoint().y();
     recHit_.hy = 0.5 * (sim_y1 + sim_y2);
+    //recHit_.hy = localPosHit.y();
 
     float time_to_detid_ns = GP0.mag() / (CLHEP::c_light * CLHEP::ns / CLHEP::cm);  // speed of light in ns
     recHit_.ht = closest_simhit->timeOfFlight() - time_to_detid_ns;
@@ -729,9 +751,15 @@ void Phase2PixelNtuple::fillPRecHit(const int detid_db,
     float sim_x1 = closest_simhit->entryPoint().x();
     float sim_x2 = closest_simhit->exitPoint().x();
     recHit_.hx = 0.5 * (sim_x1 + sim_x2);
+    
+    //Local3DPoint localPosHit(closest_simhit->localPosition());
+
+    //recHit_.hx = localPosHit.x();
+	
     float sim_y1 = closest_simhit->entryPoint().y();
     float sim_y2 = closest_simhit->exitPoint().y();
     recHit_.hy = 0.5 * (sim_y1 + sim_y2);
+    //recHit_.hy = localPosHit.y();
 
     float time_to_detid_ns = GP0.mag() / (CLHEP::c_light * CLHEP::ns / CLHEP::cm);  // speed of light in ns
     recHit_.ht = closest_simhit->timeOfFlight() - time_to_detid_ns;

@@ -119,9 +119,13 @@ LocalPoint PixelCPETemplateReco::localPosition(DetParam const& theDetParam, Clus
   const bool fpix = GeomDetEnumerators::isEndcap(theDetParam.thePart);
 
   int ID = -9999;
+  //std::cout<<LoadTemplatesFromDB_<<std::endl;
+
+
   if (LoadTemplatesFromDB_) {
     int ID0 = templateDBobject_->getTemplateID(theDetParam.theDet->geographicalId());  // just to comapre
-    ID = theDetParam.detTemplateId;
+    
+	ID = theDetParam.detTemplateId;
     if (ID0 != ID)
       edm::LogError("PixelCPETemplateReco") << " different id" << ID << " " << ID0 << endl;
   } else {  // from asci file

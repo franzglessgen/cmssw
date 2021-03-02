@@ -6,7 +6,7 @@ PixelCPEGenericESProducer = _generic_default.clone()
 # This customizes the Run3 Pixel CPE generic reconstruction in order to activate the IrradiationBiasCorrection
 # because of the expected resolution loss due to radiation damage
 from Configuration.Eras.Modifier_run3_common_cff import run3_common
-run3_common.toModify(PixelCPEGenericESProducer, IrradiationBiasCorrection = True)
+run3_common.toModify(PixelCPEGenericESProducer, IrradiationBiasCorrection = False)
 
 # customize the Pixel CPE generic producer in order not to use any
 # template information

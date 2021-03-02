@@ -160,12 +160,29 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
 
   //cout<<" in PixelCPEGeneric:localPosition - "<<endl; //dk
 
+
+	
   float chargeWidthX = (theDetParam.lorentzShiftInCmX * theDetParam.widthLAFractionX);
   float chargeWidthY = (theDetParam.lorentzShiftInCmY * theDetParam.widthLAFractionY);
   float shiftX = 0.5f * theDetParam.lorentzShiftInCmX;
   float shiftY = 0.5f * theDetParam.lorentzShiftInCmY;
 
-  //cout<<" main la width "<<chargeWidthX<<" "<<chargeWidthY<<endl;
+	/*
+  std::cout<<"CWX "<<chargeWidthX<<std::endl;
+  std::cout<<"CWY "<<chargeWidthY<<std::endl;
+  std::cout<<"SX "<<shiftX<<std::endl;
+  std::cout<<"SY "<<shiftY<<std::endl;
+	*/	
+
+	/*
+  float chargeWidthX = 0;
+  float chargeWidthY = 0;
+  float shiftX = 0;
+  float shiftY = 0;
+	*/  
+
+
+ //cout<<" main la width "<<chargeWidthX<<" "<<chargeWidthY<<endl;
 
   if (UseErrorsFromTemplates_) {
     float qclus = theClusterParam.theCluster->charge();

@@ -166,6 +166,9 @@ void BrickedTBValidation::dqmBeginRun(const edm::Run& iRun, const edm::EventSetu
   H_dx1D_[s] = fs->make<TH1F>( Form("H_dx1D%i", s), "Residuals x", 200, -30, 30);
   H_dy1D_[s] = fs->make<TH1F>( Form("H_dy1D%i", s), "Residuals y", 200, -50, 50);	
 
+  //Eta plots
+  H_dx_eta_[s] = fs->make<TH2F>( Form("H_eta_dx%i", s), "Dx vs eta", 100, -5, 5, 300,-150, 150);
+  H_dy_eta_[s] = fs->make<TH2F>( Form("H_eta_dy%i", s), "Dy vs eta", 100, -5, 5, 300,-150, 150);
 
   H_eff_cell_[s][0] = fs->make<TProfile2D>( Form("H_eff_cell0%i", s), "Efficiency whole detector",Nxbins_cell0, 0, Nxbins_cell0, Nxbins_cell0, 0, Nxbins_cell0);
   H_eff_cell_[s][1] = fs->make<TProfile2D>( Form("H_eff_cell1%i", s), "Efficiency cell 1",Nxbins_cell1, 0, Nxbins_cell1, 4*Nxbins_cell1, 0, 4*Nxbins_cell1);
@@ -365,7 +368,8 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
         // and obtain the center of the cluster using a charge-weighted mean
         int cluster_tot = 0;
         int cluster_size = 0;
-        std::pair<std::set<int>, std::set<int>> cluster_size_xy;
+        double eta = 0;
+	std::pair<std::set<int>, std::set<int>> cluster_size_xy;
         std::pair<double, double> cluster_position({0.0, 0.0});
         std::set<int> used_channel;
         for (const auto& ch : st_ch.second) {
@@ -408,6 +412,15 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
           vME_digi_XYMap_->Fill(digi_global_pos.x(), digi_global_pos.y());
           vME_digi_RZMap_->Fill(digi_global_pos.z(), std::hypot(digi_global_pos.x(), digi_global_pos.y()));
 
+	  double theta = std::atan(std::abs(digi_global_pos.z())/std::hypot(digi_global_pos.x(), digi_global_pos.y()));
+
+	 double pi = 3.14159265359;
+
+
+	  std::cout<<"theta "<<theta<<std::endl;
+
+	  eta += - std::log(std::tan((pi/2.0 - theta)/2.0));
+	  std::cout<<"eta "<<eta<<std::endl;
 
 
           H_digi_XYMap_->Fill(digi_global_pos.x(), digi_global_pos.y());
@@ -443,6 +456,8 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
         
 
 	// mean weighted
+	eta/=double(cluster_size);
+	std::cout<<"eta "<<eta<<std::endl;
         cluster_position.first /= double(cluster_tot);
         cluster_position.second /= double(cluster_tot);
 
@@ -466,6 +481,11 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
           H_charge1D_[me_unit]->Fill(cluster_tot);
           H_dx1D_[me_unit]->Fill(dx_um);
           H_dy1D_[me_unit]->Fill(dy_um);
+	    
+	//Eta plots
+
+	  H_dx_eta_[me_unit]->Fill(eta, dx_um);
+	  H_dy_eta_[me_unit]->Fill(eta, dy_um);
 	 }
         // Histograms per cell
         for (unsigned int i = 0; i < vME_position_cell_[me_unit].size(); ++i) {
@@ -494,6 +514,7 @@ void BrickedTBValidation::analyze(const edm::Event& iEvent, const edm::EventSetu
             vME_clsize_cell_[me_unit][i]->Fill(
                 icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um, cluster_size);
 
+            
 
             // Position
             H_position_cell_[me_unit][i]->Fill(icell_psh.first * 1.0_inv_um, icell_psh.second * 1.0_inv_um);

@@ -23,7 +23,7 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.RecoSim_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10000)
+    input = cms.untracked.int32(100)
 )
 
 # Other statements
@@ -36,14 +36,14 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', ''
 process.source = cms.Source("PoolSource",
     fileNames =  cms.untracked.vstring(
         #'file:/eos/cms/store/relval/CMSSW_11_2_0_pre5/RelValTTbar_14TeV/GEN-SIM-RECO/PU25ns_110X_mcRun4_realistic_v3_2026D49PU200-v1/20000/CA4DC8DF-AAEC-DA43-931B-BF234D979A9D.root'
-        #'file:/eos/user/f/fglessge/Bricked_pixels/Data/RecoHits_pointlike_10000.root'
-        'file:RecoHits_pointlike_10000.root'
+        'file:/eos/user/f/fglessge/Bricked_pixels/Data/RecoHits_pointlike_10000.root'
+        #'file:RecoHits_pointlike_Dtot_0T_10000.root'
 	)
 )
 
 # Output
 process.TFileService = cms.Service('TFileService',
-    fileName = cms.string('file:rechit_largeEta_Q_validation.root')
+    fileName = cms.string('file:rechit_0T_validation.root')
 )
 
 

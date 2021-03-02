@@ -18,7 +18,8 @@ process.load('Configuration.EventContent.EventContent_cff')
 #process.load('Configuration.Geometry.GeometryExtended2023D17Reco_cff')
 process.load('Configuration.Geometry.GeometryExtended2026D57Reco_cff')
 
-process.load('Configuration.StandardSequences.MagneticField_cff')
+#process.load('Configuration.StandardSequences.MagneticField_cff')
+process.load('Configuration.StandardSequences.MagneticField_0T_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
  
@@ -29,7 +30,8 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', ''
 
 process.source = cms.Source("PoolSource",
      fileNames =  cms.untracked.vstring(
-         'file:/eos/user/f/fglessge/Bricked_pixels/Data/Digis_pointlike_10000.root'
+         #'file:/eos/user/f/fglessge/Bricked_pixels/Data/Digis_pointlike_DTot_0T_10000.root'
+         'file:Digis_pointlike_DTot_0T_10000.root'
        )
  )
  # Production Info
@@ -42,7 +44,7 @@ process.configurationMetadata = cms.untracked.PSet(
 
 
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('histo_TB_10000.root')
+    fileName = cms.string('BrickedTB_0T_10000_2.root')
 )
  
 process.DQMoutput = cms.OutputModule("PoolOutputModule",

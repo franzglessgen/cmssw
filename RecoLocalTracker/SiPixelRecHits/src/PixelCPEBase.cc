@@ -57,6 +57,7 @@ PixelCPEBase::PixelCPEBase(edm::ParameterSet const& conf,
   genErrorDBObject_ = genErrorDBObject;
 
   //-- Template Calibration Object from DB
+  
   if (theFlag_ != 0)
     templateDBobject_ = templateDBobject;  // flag to check if it is generic or templates
 
@@ -65,7 +66,7 @@ PixelCPEBase::PixelCPEBase(edm::ParameterSet const& conf,
 
   // Read templates and/or generic errors from DB
   LoadTemplatesFromDB_ = conf.getParameter<bool>("LoadTemplatesFromDB");
-
+  
   //--- Algorithm's verbosity
   theVerboseLevel = conf.getUntrackedParameter<int>("VerboseLevel", 0);
 
@@ -167,11 +168,12 @@ void PixelCPEBase::fillDetParams() {
 
     // Cache the det id for templates and generic erros
 
+
     if (theFlag_ == 0) {         // for generic
       if (LoadTemplatesFromDB_)  // do only if genError requested
         p.detTemplateId = genErrorDBObject_->getGenErrorID(p.theDet->geographicalId().rawId());
     } else {  // for templates
-      
+     
         p.detTemplateId = templateDBobject_->getTemplateID(p.theDet->geographicalId());
     }
 
@@ -364,6 +366,8 @@ LocalVector PixelCPEBase::driftDirection(DetParam& theDetParam, LocalVector Bfie
   theDetParam.widthLAFractionY = 1.;
 
   // Compute the charge width, generic only
+  
+  
   if (theFlag_ == 0) {
     if (useLAWidthFromDB_ && (lorentzAngleWidth_ != nullptr)) {
       // take it from a separate, special LA DB object (forWidth)

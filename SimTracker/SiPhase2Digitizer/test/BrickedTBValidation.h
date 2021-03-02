@@ -211,6 +211,8 @@ private:
   TH1F *H_charge1D_[100];
   TH1F *H_dx1D_[100];
   TH1F *H_dy1D_[100];
+  TH2F *H_dx_eta_[100];
+  TH2F *H_dy_eta_[100];
   
 	
 

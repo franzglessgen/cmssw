@@ -22,6 +22,7 @@
 #include "SimTracker/SiPhase2Digitizer/plugins/PSSDigitizerAlgorithm.h"
 #include "SimTracker/SiPhase2Digitizer/plugins/PSPDigitizerAlgorithm.h"
 #include "SimTracker/SiPhase2Digitizer/plugins/PixelDigitizerAlgorithm.h"
+#include "SimTracker/SiPhase2Digitizer/plugins/PixelBrickedDigitizerAlgorithm.h"
 #include "SimTracker/SiPhase2Digitizer/plugins/Pixel3DDigitizerAlgorithm.h"
 #include "SimTracker/SiPhase2Digitizer/plugins/DigitizerUtility.h"
 
@@ -95,7 +96,9 @@ namespace cms {
     algomap_[AlgorithmType::PixelinPS] = std::make_unique<PSPDigitizerAlgorithm>(iConfig);
     algomap_[AlgorithmType::StripinPS] = std::make_unique<PSSDigitizerAlgorithm>(iConfig);
     algomap_[AlgorithmType::TwoStrip] = std::make_unique<SSDigitizerAlgorithm>(iConfig);
-  }
+    algomap_[AlgorithmType::InnerPixelBricked] = std::make_unique<PixelBrickedDigitizerAlgorithm>(iConfig);
+  
+	}
 
   void Phase2TrackerDigitizer::beginLuminosityBlock(edm::LuminosityBlock const& lumi, edm::EventSetup const& iSetup) {
     iSetup.get<IdealMagneticFieldRecord>().get(pSetup_);
@@ -244,11 +247,17 @@ namespace cms {
       case TrackerGeometry::ModuleType::Ph1PXF:
         algotype = AlgorithmType::InnerPixel;
         break;
+      //case TrackerGeometry::ModuleType::Ph2PXB:
+        //algotype = AlgorithmType::InnerPixel;
+        //break;
+      //case TrackerGeometry::ModuleType::Ph2PXF:
+        //algotype = AlgorithmType::InnerPixel;
+        //break;
       case TrackerGeometry::ModuleType::Ph2PXB:
-        algotype = AlgorithmType::InnerPixel;
+        algotype = AlgorithmType::InnerPixelBricked;
         break;
       case TrackerGeometry::ModuleType::Ph2PXF:
-        algotype = AlgorithmType::InnerPixel;
+        algotype = AlgorithmType::InnerPixelBricked;
         break;
       case TrackerGeometry::ModuleType::Ph2PXB3D:
         algotype = AlgorithmType::InnerPixel3D;

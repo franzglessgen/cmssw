@@ -238,6 +238,12 @@ namespace cms {
       mType = pDD_->getDetectorType(DetId(detId_raw));
       moduleTypeCache_.emplace(detId_raw, mType);
     }
+        
+
+    auto detUnit = detectorUnits_.find(detId_raw);
+    const Phase2TrackerGeomDetUnit* pixdet = dynamic_cast<const Phase2TrackerGeomDetUnit*>(detUnit->second);
+    const Phase2TrackerTopology* topol = &pixdet->specificTopology();
+
 
     AlgorithmType algotype = AlgorithmType::Unknown;
     switch (mType) {
@@ -253,12 +259,18 @@ namespace cms {
       //case TrackerGeometry::ModuleType::Ph2PXF:
         //algotype = AlgorithmType::InnerPixel;
         //break;
+      //New condition for the choice of the topology
       case TrackerGeometry::ModuleType::Ph2PXB:
-        algotype = AlgorithmType::InnerPixelBricked;
-        break;
+        if (topol->isBricked())
+	algotype = AlgorithmType::InnerPixelBricked;
+        else 
+        algotype = AlgorithmType::InnerPixel;
+	break;
       case TrackerGeometry::ModuleType::Ph2PXF:
-        algotype = AlgorithmType::InnerPixelBricked;
-        break;
+        if (topol->isBricked())
+	algotype = AlgorithmType::InnerPixelBricked;
+        else 
+        algotype = AlgorithmType::InnerPixel;
       case TrackerGeometry::ModuleType::Ph2PXB3D:
         algotype = AlgorithmType::InnerPixel3D;
         break;

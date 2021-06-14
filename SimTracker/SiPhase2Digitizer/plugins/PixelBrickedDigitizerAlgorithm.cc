@@ -351,6 +351,8 @@ void PixelBrickedDigitizerAlgorithm::induce_signal(
     IPixLeftDownY = 0 < IPixLeftDownY ? IPixLeftDownY : 0;
 
 
+
+
     // First integrate charge strips in x
     hit_map_type x;
     for (int ix = IPixLeftDownX; ix <= IPixRightUpX; ++ix) {  // loop over x index
@@ -471,7 +473,7 @@ void PixelBrickedDigitizerAlgorithm::induce_signal(
 	int chanFired = -1;
         if (ChargeFraction > 0.) {
           chanFired =
-              pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
+              pixelFlag_ ? PixelDigi::pixelToChannel(ix, iy ) : Phase2TrackerDigi::pixelToChannel(ix, iy);  // Get index
           // Load the amplitude
           hit_signal[chanFired] += ChargeFraction;
         }
